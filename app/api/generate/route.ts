@@ -1,427 +1,440 @@
-type GenerateRequest = {
-  appNameTH?: string;
-  appNameEN?: string;
-  orgLogo?: string;
+const buildSvgArtwork = (
+  title: string,
+  subtitle: string
+) => {
+  const safeTitle =
+    title || 'Mini App';
+
+  const safeSubtitle =
+    subtitle || 'Digital Service';
+
+  const svg = `
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1200"
+      height="1200"
+      viewBox="0 0 1200 1200"
+    >
+      <defs>
+        <linearGradient
+          id="bg"
+          x1="0"
+          x2="1"
+          y1="0"
+          y2="1"
+        >
+          <stop
+            offset="0%"
+            stop-color="#eaf4ff"
+          />
+          <stop
+            offset="100%"
+            stop-color="#dfeeff"
+          />
+        </linearGradient>
+
+        <linearGradient
+          id="card"
+          x1="0"
+          x2="1"
+          y1="0"
+          y2="1"
+        >
+          <stop
+            offset="0%"
+            stop-color="#ffffff"
+            stop-opacity="0.92"
+          />
+          <stop
+            offset="100%"
+            stop-color="#ecf4ff"
+            stop-opacity="0.85"
+          />
+        </linearGradient>
+      </defs>
+
+      <rect
+        width="1200"
+        height="1200"
+        fill="url(#bg)"
+      />
+
+      <circle
+        cx="980"
+        cy="170"
+        r="150"
+        fill="#cfe3ff"
+        opacity="0.75"
+      />
+
+      <circle
+        cx="250"
+        cy="920"
+        r="180"
+        fill="#cfe3ff"
+        opacity="0.65"
+      />
+
+      <circle
+        cx="1010"
+        cy="980"
+        r="120"
+        fill="#b7d7ff"
+        opacity="0.75"
+      />
+
+      <rect
+        x="120"
+        y="120"
+        width="960"
+        height="960"
+        rx="60"
+        fill="url(#card)"
+      />
+
+      <rect
+        x="180"
+        y="180"
+        width="250"
+        height="250"
+        rx="42"
+        fill="#0c47a1"
+        opacity="0.1"
+      />
+
+      <g transform="translate(210,220)">
+        <rect
+          width="200"
+          height="200"
+          rx="42"
+          fill="#0c47a1"
+        />
+
+        <path
+          d="M52 168 L140 52 L160 52 L160 150 L132 150 L132 86 L101 128 L88 128 L69 105 L69 150 L52 150 Z"
+          fill="#ffffff"
+        />
+
+        <circle
+          cx="146"
+          cy="88"
+          r="17"
+          fill="#63b3ff"
+        />
+      </g>
+
+      <g transform="translate(520,220)">
+        <text
+          x="0"
+          y="110"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="72"
+          font-weight="700"
+          fill="#0c47a1"
+        >
+          ${safeTitle}
+        </text>
+
+        <text
+          x="0"
+          y="185"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="34"
+          font-weight="600"
+          fill="#3d5f8a"
+          letter-spacing="2"
+        >
+          ${safeSubtitle}
+        </text>
+      </g>
+
+      <g transform="translate(180,510)">
+        <rect
+          x="0"
+          y="0"
+          width="840"
+          height="430"
+          rx="42"
+          fill="#ffffff"
+          opacity="0.9"
+        />
+
+        <rect
+          x="52"
+          y="52"
+          width="220"
+          height="220"
+          rx="24"
+          fill="#edf5ff"
+        />
+
+        <rect
+          x="330"
+          y="72"
+          width="430"
+          height="32"
+          rx="16"
+          fill="#dfeeff"
+        />
+
+        <rect
+          x="330"
+          y="140"
+          width="350"
+          height="28"
+          rx="14"
+          fill="#eaf3ff"
+        />
+
+        <rect
+          x="330"
+          y="190"
+          width="420"
+          height="28"
+          rx="14"
+          fill="#eaf3ff"
+        />
+
+        <g transform="translate(95,105)">
+          <rect
+            x="0"
+            y="0"
+            width="120"
+            height="120"
+            rx="22"
+            fill="#0c47a1"
+          />
+
+          <path
+            d="M30 90 L82 32 L96 32 L96 72 L74 72 L74 54 L55 74 L45 74 L34 63 L34 90 Z"
+            fill="#ffffff"
+          />
+        </g>
+
+        <g transform="translate(540,280)">
+          <rect
+            x="0"
+            y="0"
+            width="166"
+            height="58"
+            rx="29"
+            fill="#0c47a1"
+          />
+
+          <text
+            x="83"
+            y="38"
+            text-anchor="middle"
+            font-family="Arial, Helvetica, sans-serif"
+            font-size="26"
+            font-weight="700"
+            fill="#ffffff"
+          >
+            บริการ
+          </text>
+        </g>
+      </g>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    svg
+  )}`;
 };
 
-function buildPrompt(
+
+/* =========================================================
+   FLUX / DEAPI CONFIG
+   ========================================================= */
+
+const DEAPI_MODEL =
+  process.env.DEAPI_IMAGE_MODEL ||
+  'Flux_2_Klein_4B_BF16';
+
+const DEAPI_URL =
+  'https://api.deapi.ai/api/v2/images/generations';
+
+
+/* =========================================================
+   PROMPT
+   ========================================================= */
+
+const buildPrompt = (
   appNameTH: string,
   appNameEN: string
-) {
+) => {
+  const name =
+    appNameTH ||
+    appNameEN ||
+    'Mini App';
+
+  const englishName =
+    appNameEN ||
+    name;
+
   return `
-Create a high-quality square standalone visual illustration based on the subject described below.
+Create a premium, high-quality visual illustration
+for a Thai MiniApp called "${name}" / "${englishName}".
 
-SUBJECT:
-Thai: ${appNameTH || "Public Service"}
-English: ${appNameEN || "Public Service"}
+Understand the meaning of the application name
+and create an image that directly represents
+the actual service, business, place, or subject.
 
-The Thai and English names are ONLY semantic references.
-Use them only to understand what real-world subject should be illustrated.
+The image must be visually specific to the application.
+
+For example, if the application is a coffee shop
+such as "บ้านกาแฟ Coffee House",
+create a beautiful realistic coffee house scene:
+freshly brewed coffee, elegant coffee cup,
+coffee beans, warm modern cafe interior,
+natural lighting, premium commercial photography,
+inviting atmosphere and realistic details.
+
+If the application represents another service,
+business, organization, location, product,
+or public service, create an appropriate visual
+scene based on that meaning instead.
 
 IMPORTANT:
-DO NOT reproduce, display, spell, write, draw, render, or visualize the subject name itself.
 
-The final image must communicate the subject ONLY through:
-- real-world objects
-- people
-- animals
-- nature
-- buildings
-- physical environments
-- physical activities
-- realistic contextual elements
+- prioritize the actual meaning of the application
+- strong recognizable main subject
+- premium commercial visual quality
+- realistic photography or polished cinematic 3D
+- natural lighting
+- realistic materials and textures
+- attractive depth
+- clean professional composition
+- visually rich but not cluttered
+- modern premium aesthetic
+- suitable for a mobile MiniApp
+- suitable for a professional presentation
+- leave some clean negative space for text overlay
+- no phone frame
+- no UI screenshot
+- no app interface
+- no buttons
+- no website
+- no watermark
+- no random text
+- no random letters
+- no fake logos
+- no distorted logos
+- no unnecessary typography
+- do not place large words inside the image
+- do not create a poster
+- do not create a banner
+- focus entirely on the visual subject
 
-The image should look like a professional standalone illustration that can be placed behind text on a website.
+Application name:
+${name}
 
-SUBJECT INTERPRETATION:
-If the subject is related to:
-- animals: show appropriate animals, habitats, nature, trees, water, and surroundings
-- transportation: show vehicles, roads, people, and transportation environments
-- healthcare: show doctors, patients, medical environments, and physical medical objects
-- tourism: show landmarks, nature, travelers, and destinations
-- education: show teachers, students, classrooms, books, and learning environments
-- public services: show citizens, public buildings, government environments, service activities, and community environments
-- retail or shops: show the physical shop environment, products, shelves, customers, and relevant merchandise
-- fishing or fishing equipment: show fishing rods, reels, fishing tackle, lures, lines, hooks, tackle boxes, fishing equipment, water, anglers, boats, rivers, lakes, or other natural fishing environments
+English application name:
+${englishName}
+  `.trim();
+};
 
-The interpretation must match the actual subject.
 
-VISUAL STYLE:
-- Premium professional illustration
-- Modern polished vector / 3D illustration
-- High quality
-- Detailed
-- Friendly
-- Trustworthy
-- Clean
-- Professional
-- Approachable
-- Modern
-- Harmonious colors
-- Attractive visual storytelling
-- Strong visual hierarchy
-- Clear main subject
-- Beautiful natural environment
-- Professional commercial illustration
-- Suitable for a modern Thai service application
+/* =========================================================
+   GENERATE IMAGE WITH FLUX VIA DEAPI
+   ========================================================= */
 
-COMPOSITION:
-- Square 1:1 composition
-- Full scene
-- Strong central subject
-- Clear focal point
-- Natural composition
-- Balanced composition
-- Important objects remain inside the central safe area
-- Leave some visually calm areas around the main subject
-- Background should support the main subject
-- Depth and visual layers
-- Professional lighting
-- Pleasant color balance
-- The image should work well as a full-screen background
-
-VERY IMPORTANT:
-Create ONLY the artwork / illustration.
-
-The result must NOT look like:
-- an application
-- a website
-- a mobile app
-- a user interface
-- a digital interface
-- a poster
-- an advertisement
-- a presentation slide
-- a product mockup
-- a device screen
-- a phone screen
-
-DO NOT create any UI elements.
-
-DO NOT create any text.
-
-DO NOT create any letters.
-
-DO NOT create any numbers.
-
-DO NOT create any words.
-
-DO NOT create any logo.
-
-DO NOT create any brand identity.
-
-DO NOT create any symbols intended as text or branding.
-
-DO NOT create signs containing writing.
-
-DO NOT create labels.
-
-DO NOT create captions.
-
-DO NOT create typography.
-
-DO NOT create watermarks.
-
-DO NOT create frames.
-
-DO NOT create borders.
-
-DO NOT create panels.
-
-DO NOT create cards.
-
-DO NOT create buttons.
-
-DO NOT create menus.
-
-DO NOT create navigation.
-
-DO NOT create QR codes.
-
-DO NOT create barcodes.
-
-DO NOT create screens.
-
-DO NOT create computers.
-
-DO NOT create smartphones.
-
-DO NOT create tablets.
-
-DO NOT create electronic devices.
-
-The final result must be ONLY a clean standalone real-world visual scene.
-
-No written information.
-No digital interface.
-No graphical interface.
-No text.
-No typography.
-No logo.
-No UI.
-No device mockup.
-`;
-}
-
-function buildNegativePrompt() {
-  return `
-text,
-texts,
-letter,
-letters,
-word,
-words,
-number,
-numbers,
-typography,
-font,
-caption,
-captions,
-label,
-labels,
-title,
-subtitle,
-heading,
-writing,
-written content,
-paragraph,
-sentence,
-sign,
-signage,
-street sign,
-poster,
-advertisement,
-advertising,
-banner,
-billboard,
-watermark,
-watermark text,
-logo,
-logos,
-brand,
-brand mark,
-branding,
-symbol,
-symbols,
-icon,
-icons,
-app icon,
-interface icon,
-
-smartphone,
-mobile phone,
-cellphone,
-phone,
-telephone,
-tablet,
-ipad,
-computer,
-laptop,
-desktop,
-monitor,
-smartwatch,
-electronic device,
-electronic equipment,
-electronics,
-screen,
-display,
-digital screen,
-phone screen,
-mobile screen,
-
-software,
-application,
-mobile application,
-app,
-website,
-webpage,
-web interface,
-user interface,
-UI,
-UX,
-dashboard,
-digital interface,
-app interface,
-application interface,
-software interface,
-mockup,
-app mockup,
-mobile app mockup,
-phone mockup,
-device mockup,
-device frame,
-phone frame,
-screen frame,
-
-buttons,
-button,
-navigation bar,
-navigation menu,
-menu,
-sidebar,
-dashboard,
-notification,
-status bar,
-home screen,
-lock screen,
-
-QR code,
-barcode,
-
-frame,
-frames,
-border,
-borders,
-panel,
-panels,
-card,
-cards,
-layout,
-grid,
-template,
-infographic,
-diagram,
-
-signature,
-seal,
-stamp,
-emblem,
-
-digital art interface,
-futuristic interface,
-hologram,
-virtual screen,
-augmented reality,
-virtual reality
-`;
-}
-
-function dataUrlToBase64(dataUrl: string) {
-  const match = dataUrl.match(
-    /^data:(.+?);base64,(.+)$/
-  );
-
-  if (!match) {
-    throw new Error(
-      "รูปโลโก้ต้องเป็น Base64 data URL"
-    );
-  }
-
-  return {
-    mimeType: match[1],
-    data: match[2],
-  };
-}
-
-async function generateWithDeAPI(
+const generateWithDeApi = async (
   appNameTH: string,
   appNameEN: string
-) {
+) => {
   const apiKey =
     process.env.DEAPI_API_KEY;
 
   if (!apiKey) {
-    throw new Error(
-      "ไม่พบ DEAPI_API_KEY ใน .env.local"
+    console.warn(
+      'DEAPI_API_KEY is not configured.'
     );
+
+    return null;
   }
 
-  const prompt = buildPrompt(
-    appNameTH,
-    appNameEN
-  );
+  const prompt =
+    buildPrompt(
+      appNameTH,
+      appNameEN
+    );
 
-  const negativePrompt =
-    buildNegativePrompt();
+  const requestBody = {
+    model: DEAPI_MODEL,
+
+    prompt,
+
+    width: 1024,
+
+    height: 1024,
+
+    steps: 4,
+
+    seed: -1,
+  };
 
   console.log(
-    "กำลังส่งคำขอไปยัง DeAPI..."
+    'FLUX model:',
+    DEAPI_MODEL
   );
 
-  // =========================================================
-  // 1. SUBMIT GENERATION JOB
-  // =========================================================
+  const response =
+    await fetch(
+      DEAPI_URL,
+      {
+        method: 'POST',
 
-  const generateResponse = await fetch(
-    "https://api.deapi.ai/api/v2/images/generations",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "Flux1schnell",
-        prompt,
-        negative_prompt: negativePrompt,
-        width: 1024,
-        height: 1024,
-        steps: 4,
-        guidance: 3.5,
-        seed: -1,
-      }),
-      cache: "no-store",
-    }
-  );
+        headers: {
+          Accept:
+            'application/json',
 
-  const generateText =
-    await generateResponse.text();
+          'Content-Type':
+            'application/json',
 
-  let generateData: any;
+          Authorization:
+            `Bearer ${apiKey}`,
+        },
 
-  try {
-    generateData =
-      JSON.parse(generateText);
-  } catch {
+        body:
+          JSON.stringify(
+            requestBody
+          ),
+      }
+    );
+
+  if (!response.ok) {
+    const errorText =
+      await response.text();
+
     throw new Error(
-      `DeAPI ส่งข้อมูลกลับมาไม่ถูกต้อง: ${generateText.substring(
-        0,
-        500
-      )}`
+      `FLUX image generation failed: ${errorText}`
     );
   }
 
-  if (!generateResponse.ok) {
-    console.error(
-      "DeAPI generation error:",
-      generateData
-    );
-
-    const errorMessage =
-      generateData?.error?.message ||
-      generateData?.message ||
-      generateData?.detail ||
-      `DeAPI error ${generateResponse.status}`;
-
-    throw new Error(errorMessage);
-  }
+  const data =
+    (await response.json()) as {
+      data?: {
+        request_id?: string;
+      };
+    };
 
   const requestId =
-    generateData?.data?.request_id ||
-    generateData?.request_id;
+    data?.data?.request_id;
 
   if (!requestId) {
-    console.error(
-      "DeAPI response:",
-      generateData
-    );
-
     throw new Error(
-      "DeAPI ไม่ได้ส่ง request_id กลับมา"
+      'deAPI ไม่ได้ส่ง request_id กลับมา'
     );
   }
 
-  console.log(
-    "DeAPI request_id:",
-    requestId
-  );
+  /*
+   * deAPI ใช้ระบบ Job Queue
+   * จึงต้อง Polling เพื่อรอภาพ
+   */
 
-  // =========================================================
-  // 2. POLL JOB
-  // =========================================================
+  const maxAttempts = 60;
 
-  const maxAttempts = 30;
   const pollInterval = 2000;
 
   for (
@@ -437,173 +450,95 @@ async function generateWithDeAPI(
         )
     );
 
-    console.log(
-      `กำลังรอ DeAPI... ${
-        attempt + 1
-      }/${maxAttempts}`
-    );
-
-    const statusResponse =
+    const jobResponse =
       await fetch(
         `https://api.deapi.ai/api/v2/jobs/${requestId}`,
         {
-          method: "GET",
+          method: 'GET',
+
           headers: {
-            Authorization: `Bearer ${apiKey}`,
-            Accept: "application/json",
+            Accept:
+              'application/json',
+
+            Authorization:
+              `Bearer ${apiKey}`,
           },
-          cache: "no-store",
         }
       );
 
-    const statusText =
-      await statusResponse.text();
-
-    let statusData: any;
-
-    try {
-      statusData =
-        JSON.parse(statusText);
-    } catch {
-      continue;
-    }
-
-    if (!statusResponse.ok) {
-      console.error(
-        "DeAPI status error:",
-        statusData
-      );
+    if (!jobResponse.ok) {
+      const errorText =
+        await jobResponse.text();
 
       throw new Error(
-        statusData?.error?.message ||
-          statusData?.message ||
-          `ไม่สามารถตรวจสอบสถานะ DeAPI ได้ (${statusResponse.status})`
+        `FLUX job status failed: ${errorText}`
       );
     }
 
-    const data =
-      statusData?.data || statusData;
+    const jobData =
+      (await jobResponse.json()) as {
+        data?: {
+          status?: string;
+          result_url?: string;
+          error?: string;
+        };
+      };
+
+    const job =
+      jobData?.data;
 
     const status =
-      data?.status;
+      job?.status;
 
     console.log(
-      "DeAPI status:",
-      status
+      `FLUX generation status: ${status}`
     );
 
-    // =======================================================
-    // SUCCESS
-    // =======================================================
-
     if (
-      status === "done" ||
-      status === "completed" ||
-      data?.result_url
+      status === 'done' &&
+      job?.result_url
     ) {
-      const resultUrl =
-        data?.result_url ||
-        data?.result;
-
-      if (
-        !resultUrl ||
-        typeof resultUrl !== "string"
-      ) {
-        throw new Error(
-          "DeAPI สร้างรูปเสร็จแล้ว แต่ไม่พบ URL ของรูป"
-        );
-      }
-
-      console.log(
-        "DeAPI สร้างภาพสำเร็จ:",
-        resultUrl
-      );
-
-      // =====================================================
-      // 3. DOWNLOAD IMAGE ON SERVER
-      // =====================================================
-
-      const imageResponse =
-        await fetch(resultUrl, {
-          method: "GET",
-          cache: "no-store",
-        });
-
-      if (!imageResponse.ok) {
-        throw new Error(
-          `ไม่สามารถดาวน์โหลดรูปจาก DeAPI ได้ (${imageResponse.status})`
-        );
-      }
-
-      const imageBuffer =
-        await imageResponse.arrayBuffer();
-
-      const contentType =
-        imageResponse.headers.get(
-          "content-type"
-        ) || "image/png";
-
-      const base64 =
-        Buffer.from(
-          imageBuffer
-        ).toString("base64");
-
-      return `data:${contentType};base64,${base64}`;
+      return job.result_url;
     }
 
-    // =======================================================
-    // ERROR
-    // =======================================================
-
     if (
-      status === "error" ||
-      status === "failed" ||
-      status === "cancelled"
+      status === 'error'
     ) {
-      console.error(
-        "DeAPI job failed:",
-        data
-      );
-
       throw new Error(
-        data?.error?.message ||
-          data?.error ||
-          data?.message ||
-          "DeAPI สร้างภาพไม่สำเร็จ"
+        job?.error ||
+          'FLUX สร้างภาพไม่สำเร็จ'
       );
     }
   }
 
   throw new Error(
-    "DeAPI ใช้เวลาสร้างภาพนานเกินไป กรุณาลองใหม่อีกครั้ง"
+    'FLUX ใช้เวลาสร้างภาพนานเกินไป'
   );
-}
+};
+
+
+/* =========================================================
+   POST
+   ========================================================= */
 
 export async function POST(
   request: Request
 ) {
   try {
     const body =
-      (await request.json()) as GenerateRequest;
+      (await request.json()) as {
+        appNameTH?: string;
+        appNameEN?: string;
+        orgLogo?: string;
+      };
 
     const appNameTH =
-      typeof body.appNameTH === "string"
-        ? body.appNameTH.trim()
-        : "";
+      body.appNameTH?.trim() ||
+      '';
 
     const appNameEN =
-      typeof body.appNameEN === "string"
-        ? body.appNameEN.trim()
-        : "";
-
-    const orgLogo =
-      typeof body.orgLogo === "string"
-        ? body.orgLogo
-        : "";
-
-    // =========================================================
-    // VALIDATE
-    // =========================================================
+      body.appNameEN?.trim() ||
+      '';
 
     if (
       !appNameTH &&
@@ -612,7 +547,7 @@ export async function POST(
       return Response.json(
         {
           error:
-            "กรุณากรอกชื่อแอปภาษาไทยหรือภาษาอังกฤษ",
+            'กรุณาใส่ชื่อแอปก่อน',
         },
         {
           status: 400,
@@ -620,69 +555,64 @@ export async function POST(
       );
     }
 
-    if (!orgLogo) {
-      return Response.json(
-        {
-          error:
-            "กรุณาอัปโหลดโลโก้หน่วยงาน",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    // ตรวจสอบว่า orgLogo เป็น Base64 image
-    if (
-      orgLogo.startsWith("data:image/")
-    ) {
-      try {
-        dataUrlToBase64(orgLogo);
-      } catch {
-        return Response.json(
-          {
-            error:
-              "รูปโลโก้ไม่ถูกต้อง",
-          },
-          {
-            status: 400,
-          }
+    try {
+      const image =
+        await generateWithDeApi(
+          appNameTH,
+          appNameEN
         );
+
+      if (image) {
+        return Response.json({
+          result: image,
+
+          source: 'flux',
+
+          model:
+            DEAPI_MODEL,
+        });
       }
+    } catch (
+      deApiError
+    ) {
+      console.error(
+        'FLUX generate failed, fallback to local SVG:',
+        deApiError
+      );
     }
 
-    // =========================================================
-    // GENERATE
-    // =========================================================
+    /*
+     * ถ้า FLUX / deAPI ล้มเหลว
+     * ให้ใช้ SVG สำรอง
+     */
 
-    const result =
-      await generateWithDeAPI(
+    const generated =
+      buildSvgArtwork(
         appNameTH,
         appNameEN
       );
 
-    // =========================================================
-    // RETURN
-    // =========================================================
-
     return Response.json({
-      result,
-      source: "deapi",
+      result: generated,
+
+      source:
+        'local-svg-fallback',
+
+      model:
+        DEAPI_MODEL,
     });
-  } catch (error: unknown) {
+  } catch (
+    error
+  ) {
     console.error(
-      "DeAPI image generation error:",
+      'Generate route error:',
       error
     );
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "เกิดข้อผิดพลาดในการสร้างภาพ AI";
-
     return Response.json(
       {
-        error: message,
+        error:
+          'AI สร้างรูปไม่สำเร็จ',
       },
       {
         status: 500,

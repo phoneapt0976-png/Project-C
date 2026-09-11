@@ -34,12 +34,6 @@ export default function MiniAppForm() {
   const screen2Ref = useRef<HTMLDivElement>(null);
   const screen3Ref = useRef<HTMLDivElement>(null);
 
-  /*
-   * ============================================================
-   * วิเคราะห์สีภาพ AI
-   * ============================================================
-   */
-
   const analyzeImageTextColor = async (
     imageSrc: string
   ): Promise<void> => {
@@ -177,12 +171,6 @@ export default function MiniAppForm() {
 
     analyzeImageTextColor(appLogo);
   }, [appLogo]);
-
-  /*
-   * ============================================================
-   * ลบพื้นหลังสีขาวของโลโก้
-   * ============================================================
-   */
 
   const removeWhiteBackground = (
     dataUrl: string,
@@ -401,12 +389,6 @@ export default function MiniAppForm() {
     });
   };
 
-  /*
-   * ============================================================
-   * Upload Image
-   * ============================================================
-   */
-
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     setPreview: React.Dispatch<
@@ -479,12 +461,6 @@ export default function MiniAppForm() {
     e.target.value = '';
   };
 
-  /*
-   * ============================================================
-   * Wait Images
-   * ============================================================
-   */
-
   const waitForImages = async (
     element: HTMLElement
   ) => {
@@ -543,12 +519,6 @@ export default function MiniAppForm() {
     );
   };
 
-  /*
-   * ============================================================
-   * Wait Fonts
-   * ============================================================
-   */
-
   const waitForFonts =
     async () => {
       if (
@@ -580,12 +550,6 @@ export default function MiniAppForm() {
         );
       }
     };
-
-  /*
-   * ============================================================
-   * Generate AI Preview
-   * ============================================================
-   */
 
   const handlePreviewClick =
     async () => {
@@ -732,12 +696,6 @@ export default function MiniAppForm() {
       }
     };
 
-  /*
-   * ============================================================
-   * Create PNG
-   * ============================================================
-   */
-
   const createImageWithCanvas =
     async (
       element: HTMLElement
@@ -782,12 +740,6 @@ export default function MiniAppForm() {
       );
     };
 
-  /*
-   * ============================================================
-   * Data URL -> Blob
-   * ============================================================
-   */
-
   const dataUrlToBlob =
     async (
       dataUrl: string
@@ -805,12 +757,6 @@ export default function MiniAppForm() {
 
       return await response.blob();
     };
-
-  /*
-   * ============================================================
-   * Download Screen
-   * ============================================================
-   */
 
   const downloadScreen =
     async (
@@ -1105,12 +1051,6 @@ export default function MiniAppForm() {
       }
     };
 
-  /*
-   * ============================================================
-   * PREVIEW
-   * ============================================================
-   */
-
   if (showPreview) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 sm:p-8 font-sans text-gray-700 flex flex-col items-center overflow-x-auto">
@@ -1133,10 +1073,6 @@ export default function MiniAppForm() {
         </div>
 
         <div className="w-full max-w-6xl flex flex-wrap justify-center gap-8">
-
-          {/* =====================================================
-              SCREEN 1
-          ===================================================== */}
 
           <div className="flex flex-col items-center">
 
@@ -1384,10 +1320,6 @@ export default function MiniAppForm() {
 
           </div>
 
-          {/* =====================================================
-              SCREEN 2
-          ===================================================== */}
-
           <div className="flex flex-col items-center">
 
             <div
@@ -1464,10 +1396,6 @@ export default function MiniAppForm() {
 
           </div>
 
-          {/* =====================================================
-              SCREEN 3
-          ===================================================== */}
-
           <div className="flex flex-col items-center">
 
             <div
@@ -1509,37 +1437,21 @@ export default function MiniAppForm() {
 
               <div className="absolute top-[35px] left-[25px] right-[25px] z-40 flex justify-center">
 
-                <div
-                  className="inline-block px-4 py-1.5 rounded-lg"
+                <h1
+                  className="font-bold text-[23px] leading-tight whitespace-nowrap"
                   style={{
-                    backgroundColor:
-                      themeColor,
+                    color:
+                      '#ffffff',
 
-                    border:
-                      `2px solid ${themeColor}`,
+                    fontFamily:
+                      'Anuphan, sans-serif',
 
-                    boxShadow:
-                      '0 3px 10px rgba(0,0,0,0.4)',
+                    textShadow:
+                      '0 3px 8px rgba(0,0,0,0.95)',
                   }}
                 >
-
-                  <h1
-                    className="font-bold text-[23px] leading-tight whitespace-nowrap"
-                    style={{
-                      color:
-                        '#ffffff',
-
-                      fontFamily:
-                        'Anuphan, sans-serif',
-
-                      textShadow:
-                        '0 2px 5px rgba(0,0,0,0.45)',
-                    }}
-                  >
-                    การให้บริการประชาชน
-                  </h1>
-
-                </div>
+                  การให้บริการประชาชน
+                </h1>
 
               </div>
 
@@ -1717,15 +1629,7 @@ export default function MiniAppForm() {
                 }}
               >
 
-                <div
-                  className="absolute top-0 left-0 right-0 h-[10px]"
-                  style={{
-                    backgroundColor:
-                      themeColor,
-                  }}
-                />
-
-                <div className="absolute left-0 right-0 bottom-0 top-[10px] flex items-center justify-center px-4">
+                <div className="absolute inset-0 flex items-center justify-center px-4">
 
                   <div className="w-full flex items-center justify-around">
 
@@ -1827,12 +1731,6 @@ export default function MiniAppForm() {
     );
   }
 
-  /*
-   * ============================================================
-   * FORM - REDESIGNED
-   * ============================================================
-   */
-
   return (
     <div
       className="min-h-screen text-gray-800"
@@ -1843,10 +1741,6 @@ export default function MiniAppForm() {
           'linear-gradient(135deg, #f8fafc 0%, #eef5ff 45%, #f8fafc 100%)',
       }}
     >
-
-      {/* ========================================================
-          DECORATIVE BACKGROUND
-      ======================================================== */}
 
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
 
@@ -1863,10 +1757,6 @@ export default function MiniAppForm() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-
-        {/* ======================================================
-            HERO
-        ====================================================== */}
 
         <div className="mb-8">
 
@@ -1920,10 +1810,6 @@ export default function MiniAppForm() {
           </div>
 
         </div>
-
-        {/* ======================================================
-            STEP PROGRESS
-        ====================================================== */}
 
         <div className="bg-white/85 backdrop-blur-xl border border-white rounded-2xl shadow-sm p-3 sm:p-4 mb-7">
 
@@ -1999,21 +1885,9 @@ export default function MiniAppForm() {
 
         </div>
 
-        {/* ======================================================
-            MAIN GRID
-        ====================================================== */}
-
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 items-start">
 
-          {/* ====================================================
-              LEFT - FORM
-          ==================================================== */}
-
           <div className="space-y-6">
-
-            {/* ==================================================
-                THEME COLOR CARD
-            ================================================== */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2106,10 +1980,6 @@ export default function MiniAppForm() {
 
             </div>
 
-            {/* ==================================================
-                STEP 1
-            ================================================== */}
-
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
               <div className="px-5 sm:px-6 py-5 border-b border-gray-100">
@@ -2153,8 +2023,6 @@ export default function MiniAppForm() {
               <div className="p-5 sm:p-6">
 
                 <div className="grid grid-cols-1 md:grid-cols-[150px_minmax(0,1fr)] gap-7">
-
-                  {/* LOGO */}
 
                   <div>
 
@@ -2228,8 +2096,6 @@ export default function MiniAppForm() {
 
                   </div>
 
-                  {/* NAMES */}
-
                   <div className="space-y-5 min-w-0">
 
                     <div>
@@ -2295,10 +2161,6 @@ export default function MiniAppForm() {
               </div>
 
             </div>
-
-            {/* ==================================================
-                STEP 2
-            ================================================== */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2453,10 +2315,6 @@ export default function MiniAppForm() {
 
             </div>
 
-            {/* ==================================================
-                STEP 3
-            ================================================== */}
-
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
               <div className="px-5 sm:px-6 py-5 border-b border-gray-100">
@@ -2491,8 +2349,6 @@ export default function MiniAppForm() {
 
               <div className="p-5 sm:p-6 space-y-6">
 
-                {/* HEADER SERVICE */}
-
                 <div>
 
                   <label className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
@@ -2520,8 +2376,6 @@ export default function MiniAppForm() {
                   />
 
                 </div>
-
-                {/* DETAIL */}
 
                 <div>
 
@@ -2558,11 +2412,7 @@ export default function MiniAppForm() {
 
                 </div>
 
-                {/* FOOTER UPLOADS */}
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-                  {/* FOOTER LOGO */}
 
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
 
@@ -2628,8 +2478,6 @@ export default function MiniAppForm() {
 
                   </div>
 
-                  {/* QR */}
-
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
 
                     <label className="block text-xs font-semibold text-gray-500 mb-3">
@@ -2690,13 +2538,7 @@ export default function MiniAppForm() {
 
           </div>
 
-          {/* ====================================================
-              RIGHT - SUMMARY
-          ==================================================== */}
-
           <div className="lg:sticky lg:top-6 space-y-5">
-
-            {/* LIVE SUMMARY */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2727,8 +2569,6 @@ export default function MiniAppForm() {
                   </div>
 
                 </div>
-
-                {/* APP LOGO */}
 
                 <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 mb-4">
 
@@ -2772,8 +2612,6 @@ export default function MiniAppForm() {
 
                 </div>
 
-                {/* COLOR */}
-
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
 
                   <span className="text-xs text-gray-500">
@@ -2797,8 +2635,6 @@ export default function MiniAppForm() {
                   </div>
 
                 </div>
-
-                {/* FILE STATUS */}
 
                 <div className="py-3 space-y-3">
 
@@ -2868,8 +2704,6 @@ export default function MiniAppForm() {
 
               </div>
 
-              {/* PREVIEW COLOR STRIP */}
-
               <div
                 className="h-2"
                 style={{
@@ -2880,77 +2714,9 @@ export default function MiniAppForm() {
 
             </div>
 
-            {/* OUTPUT CARD */}
-
-            <div className="rounded-3xl p-5 text-white shadow-lg overflow-hidden relative"
-              style={{
-                background:
-                  `linear-gradient(135deg, ${themeColor}, #111827)`,
-              }}
-            >
-
-              <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-white/10" />
-
-              <div className="absolute -left-8 -bottom-10 w-32 h-32 rounded-full bg-white/5" />
-
-              <div className="relative">
-
-                <div className="text-[10px] uppercase tracking-wider text-white/60 font-bold">
-                  Final Output
-                </div>
-
-                <div className="text-lg font-bold mt-1">
-                  3 Screenshot
-                </div>
-
-                <p className="text-xs text-white/70 leading-relaxed mt-2">
-                  ระบบจะสร้างภาพตัวอย่าง
-                  พร้อมภาพประกอบ AI
-                  สำหรับ MiniApp ของคุณ
-                </p>
-
-                <div className="grid grid-cols-3 gap-2 mt-4">
-
-                  <div className="bg-white/10 rounded-xl p-2 text-center backdrop-blur">
-                    <div className="text-lg">
-                      01
-                    </div>
-                    <div className="text-[9px] text-white/60 mt-0.5">
-                      Cover
-                    </div>
-                  </div>
-
-                  <div className="bg-white/10 rounded-xl p-2 text-center backdrop-blur">
-                    <div className="text-lg">
-                      02
-                    </div>
-                    <div className="text-[9px] text-white/60 mt-0.5">
-                      Phone
-                    </div>
-                  </div>
-
-                  <div className="bg-white/10 rounded-xl p-2 text-center backdrop-blur">
-                    <div className="text-lg">
-                      03
-                    </div>
-                    <div className="text-[9px] text-white/60 mt-0.5">
-                      Service
-                    </div>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
           </div>
 
         </div>
-
-        {/* ======================================================
-            CREATE BUTTON
-        ====================================================== */}
 
         <div className="mt-8 pb-8">
 
