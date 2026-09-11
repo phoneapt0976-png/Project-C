@@ -1,12 +1,63 @@
+/* =========================================================
+   SVG FALLBACK
+   ========================================================= */
+
+const escapeXml = (value: string) => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
+
 const buildSvgArtwork = (
   title: string,
-  subtitle: string
+  subtitle: string,
+  orgLogo?: string
 ) => {
   const safeTitle =
-    title || 'Mini App';
+    escapeXml(title || 'Mini App');
 
   const safeSubtitle =
-    subtitle || 'Digital Service';
+    escapeXml(subtitle || 'Digital Service');
+
+  const logo =
+    orgLogo || '';
+
+  const logoImage = logo
+    ? `
+      <image
+        href="${logo}"
+        x="205"
+        y="205"
+        width="210"
+        height="210"
+        preserveAspectRatio="xMidYMid meet"
+      />
+    `
+    : `
+      <rect
+        x="210"
+        y="210"
+        width="200"
+        height="200"
+        rx="42"
+        fill="#0c47a1"
+      />
+
+      <path
+        d="M252 368 L340 252 L360 252 L360 350 L332 350 L332 286 L301 328 L288 328 L269 305 L269 350 L252 350 Z"
+        fill="#ffffff"
+      />
+
+      <circle
+        cx="346"
+        cy="288"
+        r="17"
+        fill="#63b3ff"
+      />
+    `;
 
   const svg = `
     <svg
@@ -15,7 +66,9 @@ const buildSvgArtwork = (
       height="1200"
       viewBox="0 0 1200 1200"
     >
+
       <defs>
+
         <linearGradient
           id="bg"
           x1="0"
@@ -27,6 +80,7 @@ const buildSvgArtwork = (
             offset="0%"
             stop-color="#eaf4ff"
           />
+
           <stop
             offset="100%"
             stop-color="#dfeeff"
@@ -43,21 +97,29 @@ const buildSvgArtwork = (
           <stop
             offset="0%"
             stop-color="#ffffff"
-            stop-opacity="0.92"
+            stop-opacity="0.96"
           />
+
           <stop
             offset="100%"
             stop-color="#ecf4ff"
-            stop-opacity="0.85"
+            stop-opacity="0.9"
           />
         </linearGradient>
+
       </defs>
+
+
+      <!-- Background -->
 
       <rect
         width="1200"
         height="1200"
         fill="url(#bg)"
       />
+
+
+      <!-- Decorative circles -->
 
       <circle
         cx="980"
@@ -83,6 +145,9 @@ const buildSvgArtwork = (
         opacity="0.75"
       />
 
+
+      <!-- Main card -->
+
       <rect
         x="120"
         y="120"
@@ -92,6 +157,9 @@ const buildSvgArtwork = (
         fill="url(#card)"
       />
 
+
+      <!-- Logo area -->
+
       <rect
         x="180"
         y="180"
@@ -99,36 +167,21 @@ const buildSvgArtwork = (
         height="250"
         rx="42"
         fill="#0c47a1"
-        opacity="0.1"
+        opacity="0.08"
       />
 
-      <g transform="translate(210,220)">
-        <rect
-          width="200"
-          height="200"
-          rx="42"
-          fill="#0c47a1"
-        />
+      ${logoImage}
 
-        <path
-          d="M52 168 L140 52 L160 52 L160 150 L132 150 L132 86 L101 128 L88 128 L69 105 L69 150 L52 150 Z"
-          fill="#ffffff"
-        />
 
-        <circle
-          cx="146"
-          cy="88"
-          r="17"
-          fill="#63b3ff"
-        />
-      </g>
+      <!-- Application name -->
 
       <g transform="translate(520,220)">
+
         <text
           x="0"
           y="110"
           font-family="Arial, Helvetica, sans-serif"
-          font-size="72"
+          font-size="64"
           font-weight="700"
           fill="#0c47a1"
         >
@@ -139,16 +192,21 @@ const buildSvgArtwork = (
           x="0"
           y="185"
           font-family="Arial, Helvetica, sans-serif"
-          font-size="34"
+          font-size="32"
           font-weight="600"
           fill="#3d5f8a"
           letter-spacing="2"
         >
           ${safeSubtitle}
         </text>
+
       </g>
 
+
+      <!-- Illustration preview card -->
+
       <g transform="translate(180,510)">
+
         <rect
           x="0"
           y="0"
@@ -156,8 +214,11 @@ const buildSvgArtwork = (
           height="430"
           rx="42"
           fill="#ffffff"
-          opacity="0.9"
+          opacity="0.92"
         />
+
+
+        <!-- Illustration placeholder -->
 
         <rect
           x="52"
@@ -167,6 +228,9 @@ const buildSvgArtwork = (
           rx="24"
           fill="#edf5ff"
         />
+
+
+        <!-- Content lines -->
 
         <rect
           x="330"
@@ -195,23 +259,43 @@ const buildSvgArtwork = (
           fill="#eaf3ff"
         />
 
-        <g transform="translate(95,105)">
-          <rect
-            x="0"
-            y="0"
-            width="120"
-            height="120"
-            rx="22"
-            fill="#0c47a1"
-          />
 
-          <path
-            d="M30 90 L82 32 L96 32 L96 72 L74 72 L74 54 L55 74 L45 74 L34 63 L34 90 Z"
-            fill="#ffffff"
-          />
-        </g>
+        <!-- Small logo -->
+
+        ${
+          logo
+            ? `
+              <image
+                href="${logo}"
+                x="92"
+                y="92"
+                width="140"
+                height="140"
+                preserveAspectRatio="xMidYMid meet"
+              />
+            `
+            : `
+              <rect
+                x="95"
+                y="105"
+                width="120"
+                height="120"
+                rx="22"
+                fill="#0c47a1"
+              />
+
+              <path
+                d="M125 195 L177 137 L191 137 L191 177 L169 177 L169 159 L150 179 L140 179 L129 168 L129 195 Z"
+                fill="#ffffff"
+              />
+            `
+        }
+
+
+        <!-- Button -->
 
         <g transform="translate(540,280)">
+
           <rect
             x="0"
             y="0"
@@ -232,14 +316,15 @@ const buildSvgArtwork = (
           >
             บริการ
           </text>
+
         </g>
+
       </g>
+
     </svg>
   `;
 
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-    svg
-  )}`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
 
@@ -251,8 +336,8 @@ const DEAPI_MODEL =
   process.env.DEAPI_IMAGE_MODEL ||
   'Flux_2_Klein_4B_BF16';
 
-const DEAPI_URL =
-  'https://api.deapi.ai/api/v2/images/generations';
+const DEAPI_EDIT_URL =
+  'https://api.deapi.ai/api/v2/images/edits';
 
 
 /* =========================================================
@@ -273,165 +358,157 @@ const buildPrompt = (
     name;
 
   return `
-Create a premium, high-quality visual illustration
-for a Thai MiniApp called "${name}" / "${englishName}".
+Transform the provided organization logo into a
+premium minimal sticker-style illustration.
 
-Understand the meaning of the application name
-and create an image that directly represents
-the actual service, business, place, or subject.
+The uploaded image is the ORIGINAL ORGANIZATION LOGO.
+Use it as the main visual reference.
 
-The image must be visually specific to the application.
+Application name:
+"${name}"
 
-For example, if the application is a coffee shop
-such as "บ้านกาแฟ Coffee House",
-create a beautiful realistic coffee house scene:
-freshly brewed coffee, elegant coffee cup,
-coffee beans, warm modern cafe interior,
-natural lighting, premium commercial photography,
-inviting atmosphere and realistic details.
-
-If the application represents another service,
-business, organization, location, product,
-or public service, create an appropriate visual
-scene based on that meaning instead.
+English application name:
+"${englishName}"
 
 IMPORTANT:
 
-- prioritize the actual meaning of the application
-- strong recognizable main subject
-- premium commercial visual quality
-- realistic photography or polished cinematic 3D
-- natural lighting
-- realistic materials and textures
-- attractive depth
-- clean professional composition
-- visually rich but not cluttered
-- modern premium aesthetic
-- suitable for a mobile MiniApp
+- preserve the recognizable identity of the original logo
+- keep the main symbol and visual concept recognizable
+- use the uploaded logo as the primary subject
+- transform the logo into a clean modern sticker illustration
+- minimal but visually attractive
+- professional corporate style
+- suitable for a Thai government or professional MiniApp
+- clean vector-like appearance
+- smooth shapes
+- subtle dimensional depth
+- soft highlights
+- clean edges
+- polished commercial illustration
+- balanced composition
+- centered main subject
+- simple background
+- light and clean color palette
+- premium presentation quality
+- suitable for mobile application artwork
 - suitable for a professional presentation
-- leave some clean negative space for text overlay
-- no phone frame
-- no UI screenshot
-- no app interface
-- no buttons
-- no website
-- no watermark
-- no random text
-- no random letters
-- no fake logos
-- no distorted logos
-- no unnecessary typography
-- do not place large words inside the image
-- do not create a poster
-- do not create a banner
-- focus entirely on the visual subject
 
-Application name:
-${name}
+The application name should influence the visual
+concept when appropriate.
 
-English application name:
-${englishName}
+If the organization name describes a place,
+service, product, educational subject, hospital,
+government organization, shop, or other specific
+subject, subtly incorporate that concept into the
+illustration while keeping the original logo
+recognizable.
+
+For example:
+
+- hospital -> subtle medical visual elements
+- school -> subtle education elements
+- coffee shop -> subtle coffee elements
+- government office -> subtle public-service elements
+- museum -> subtle cultural elements
+- financial service -> subtle finance elements
+
+Do NOT replace the original logo with an unrelated
+image.
+
+Do NOT invent a completely different logo.
+
+Do NOT create a poster.
+
+Do NOT create a banner.
+
+Do NOT create a website.
+
+Do NOT create a mobile UI.
+
+Do NOT create buttons.
+
+Do NOT create a phone frame.
+
+Do NOT add large text.
+
+Do NOT add random letters.
+
+Do NOT add random typography.
+
+Do NOT add watermark.
+
+Do NOT distort the original logo unnecessarily.
+
+The final image should look like a
+professional minimal sticker / mascot illustration
+derived from the uploaded organization logo.
   `.trim();
 };
 
 
 /* =========================================================
-   GENERATE IMAGE WITH FLUX VIA DEAPI
+   DATA URL -> BLOB
    ========================================================= */
 
-const generateWithDeApi = async (
-  appNameTH: string,
-  appNameEN: string
-) => {
-  const apiKey =
-    process.env.DEAPI_API_KEY;
-
-  if (!apiKey) {
-    console.warn(
-      'DEAPI_API_KEY is not configured.'
+const dataUrlToBlob = (
+  dataUrl: string
+): Blob => {
+  const match =
+    dataUrl.match(
+      /^data:([^;,]+)?(?:;base64)?,(.*)$/s
     );
 
-    return null;
-  }
-
-  const prompt =
-    buildPrompt(
-      appNameTH,
-      appNameEN
-    );
-
-  const requestBody = {
-    model: DEAPI_MODEL,
-
-    prompt,
-
-    width: 1024,
-
-    height: 1024,
-
-    steps: 4,
-
-    seed: -1,
-  };
-
-  console.log(
-    'FLUX model:',
-    DEAPI_MODEL
-  );
-
-  const response =
-    await fetch(
-      DEAPI_URL,
-      {
-        method: 'POST',
-
-        headers: {
-          Accept:
-            'application/json',
-
-          'Content-Type':
-            'application/json',
-
-          Authorization:
-            `Bearer ${apiKey}`,
-        },
-
-        body:
-          JSON.stringify(
-            requestBody
-          ),
-      }
-    );
-
-  if (!response.ok) {
-    const errorText =
-      await response.text();
-
+  if (!match) {
     throw new Error(
-      `FLUX image generation failed: ${errorText}`
+      'รูปโลโก้มีรูปแบบไม่ถูกต้อง'
     );
   }
+
+  const mimeType =
+    match[1] ||
+    'image/png';
 
   const data =
-    (await response.json()) as {
-      data?: {
-        request_id?: string;
-      };
-    };
+    match[2];
 
-  const requestId =
-    data?.data?.request_id;
+  if (
+    dataUrl.includes(';base64')
+  ) {
+    const binary =
+      Buffer.from(
+        data,
+        'base64'
+      );
 
-  if (!requestId) {
-    throw new Error(
-      'deAPI ไม่ได้ส่ง request_id กลับมา'
+    return new Blob(
+      [binary],
+      {
+        type: mimeType,
+      }
     );
   }
 
-  /*
-   * deAPI ใช้ระบบ Job Queue
-   * จึงต้อง Polling เพื่อรอภาพ
-   */
+  return new Blob(
+    [
+      decodeURIComponent(
+        data
+      ),
+    ],
+    {
+      type: mimeType,
+    }
+  );
+};
+
+
+/* =========================================================
+   POLL DEAPI JOB
+   ========================================================= */
+
+const waitForDeApiResult = async (
+  requestId: string,
+  apiKey: string
+) => {
 
   const maxAttempts = 60;
 
@@ -442,6 +519,7 @@ const generateWithDeApi = async (
     attempt < maxAttempts;
     attempt++
   ) {
+
     await new Promise<void>(
       (resolve) =>
         setTimeout(
@@ -449,6 +527,7 @@ const generateWithDeApi = async (
           pollInterval
         )
     );
+
 
     const jobResponse =
       await fetch(
@@ -466,7 +545,9 @@ const generateWithDeApi = async (
         }
       );
 
+
     if (!jobResponse.ok) {
+
       const errorText =
         await jobResponse.text();
 
@@ -475,44 +556,221 @@ const generateWithDeApi = async (
       );
     }
 
+
     const jobData =
       (await jobResponse.json()) as {
         data?: {
           status?: string;
           result_url?: string;
+          result?: string;
           error?: string;
         };
       };
 
+
     const job =
       jobData?.data;
 
+
     const status =
       job?.status;
+
 
     console.log(
       `FLUX generation status: ${status}`
     );
 
+
     if (
-      status === 'done' &&
-      job?.result_url
+      status === 'done'
     ) {
-      return job.result_url;
+
+      const result =
+        job?.result_url ||
+        job?.result;
+
+      if (result) {
+        return result;
+      }
+
+      throw new Error(
+        'FLUX สร้างภาพสำเร็จแต่ไม่พบ URL ของภาพ'
+      );
     }
+
 
     if (
       status === 'error'
     ) {
+
       throw new Error(
         job?.error ||
           'FLUX สร้างภาพไม่สำเร็จ'
       );
     }
+
   }
+
 
   throw new Error(
     'FLUX ใช้เวลาสร้างภาพนานเกินไป'
+  );
+};
+
+
+/* =========================================================
+   GENERATE IMAGE FROM LOGO
+   ========================================================= */
+
+const generateWithDeApi = async (
+  appNameTH: string,
+  appNameEN: string,
+  orgLogo: string
+) => {
+
+  const apiKey =
+    process.env.DEAPI_API_KEY;
+
+
+  if (!apiKey) {
+
+    console.warn(
+      'DEAPI_API_KEY is not configured.'
+    );
+
+    return null;
+  }
+
+
+  if (!orgLogo) {
+
+    throw new Error(
+      'ไม่พบโลโก้สำหรับสร้างภาพ'
+    );
+  }
+
+
+  const prompt =
+    buildPrompt(
+      appNameTH,
+      appNameEN
+    );
+
+
+  const imageBlob =
+    dataUrlToBlob(
+      orgLogo
+    );
+
+
+  /*
+   * deAPI Image Edit
+   *
+   * ใช้ FLUX.2 Klein
+   * เพื่อเปลี่ยนโลโก้ที่อัปโหลด
+   * ให้เป็น sticker illustration
+   */
+
+  const formData =
+    new FormData();
+
+
+  formData.append(
+    'image',
+    imageBlob,
+    'organization-logo.png'
+  );
+
+
+  formData.append(
+    'prompt',
+    prompt
+  );
+
+
+  formData.append(
+    'model',
+    DEAPI_MODEL
+  );
+
+
+  formData.append(
+    'steps',
+    '4'
+  );
+
+
+  formData.append(
+    'seed',
+    String(
+      Math.floor(
+        Math.random() *
+          2147483647
+      )
+    )
+  );
+
+
+  console.log(
+    'FLUX image edit model:',
+    DEAPI_MODEL
+  );
+
+
+  const response =
+    await fetch(
+      DEAPI_EDIT_URL,
+      {
+        method: 'POST',
+
+        headers: {
+          Accept:
+            'application/json',
+
+          Authorization:
+            `Bearer ${apiKey}`,
+        },
+
+        body:
+          formData,
+      }
+    );
+
+
+  if (!response.ok) {
+
+    const errorText =
+      await response.text();
+
+    throw new Error(
+      `FLUX image edit failed: ${errorText}`
+    );
+  }
+
+
+  const data =
+    (await response.json()) as {
+      data?: {
+        request_id?: string;
+      };
+    };
+
+
+  const requestId =
+    data?.data?.request_id;
+
+
+  if (!requestId) {
+
+    throw new Error(
+      'deAPI ไม่ได้ส่ง request_id กลับมา'
+    );
+  }
+
+
+  return await waitForDeApiResult(
+    requestId,
+    apiKey
   );
 };
 
@@ -524,7 +782,9 @@ const generateWithDeApi = async (
 export async function POST(
   request: Request
 ) {
+
   try {
+
     const body =
       (await request.json()) as {
         appNameTH?: string;
@@ -532,18 +792,31 @@ export async function POST(
         orgLogo?: string;
       };
 
+
     const appNameTH =
       body.appNameTH?.trim() ||
       '';
+
 
     const appNameEN =
       body.appNameEN?.trim() ||
       '';
 
+
+    const orgLogo =
+      body.orgLogo?.trim() ||
+      '';
+
+
+    /*
+     * ต้องมีชื่อแอป
+     */
+
     if (
       !appNameTH &&
       !appNameEN
     ) {
+
       return Response.json(
         {
           error:
@@ -555,59 +828,102 @@ export async function POST(
       );
     }
 
-    try {
-      const image =
-        await generateWithDeApi(
-          appNameTH,
-          appNameEN
-        );
 
-      if (image) {
-        return Response.json({
-          result: image,
+    /*
+     * ต้องมีโลโก้
+     *
+     * เพราะตอนนี้ FLUX จะใช้
+     * โลโก้เป็นภาพต้นฉบับ
+     */
 
-          source: 'flux',
+    if (!orgLogo) {
 
-          model:
-            DEAPI_MODEL,
-        });
-      }
-    } catch (
-      deApiError
-    ) {
-      console.error(
-        'FLUX generate failed, fallback to local SVG:',
-        deApiError
+      return Response.json(
+        {
+          error:
+            'กรุณาอัปโหลดโลโก้องค์กรก่อนสร้างภาพ',
+        },
+        {
+          status: 400,
+        }
       );
     }
 
+
+    try {
+
+      const image =
+        await generateWithDeApi(
+          appNameTH,
+          appNameEN,
+          orgLogo
+        );
+
+
+      if (image) {
+
+        return Response.json(
+          {
+            result: image,
+
+            source:
+              'flux-image-edit',
+
+            model:
+              DEAPI_MODEL,
+          }
+        );
+      }
+
+    } catch (
+      deApiError
+    ) {
+
+      console.error(
+        'FLUX image edit failed, fallback to local SVG:',
+        deApiError
+      );
+
+    }
+
+
     /*
-     * ถ้า FLUX / deAPI ล้มเหลว
-     * ให้ใช้ SVG สำรอง
+     * ถ้า FLUX ล้มเหลว
+     * ใช้ SVG fallback
+     * และเอาโลโก้จริงมาแสดงด้วย
      */
 
     const generated =
       buildSvgArtwork(
         appNameTH,
-        appNameEN
+        appNameEN,
+        orgLogo
       );
 
-    return Response.json({
-      result: generated,
 
-      source:
-        'local-svg-fallback',
+    return Response.json(
+      {
+        result:
+          generated,
 
-      model:
-        DEAPI_MODEL,
-    });
+        source:
+          'local-svg-fallback',
+
+        model:
+          DEAPI_MODEL,
+      }
+    );
+
+
   } catch (
     error
   ) {
+
     console.error(
       'Generate route error:',
       error
     );
+
 
     return Response.json(
       {
@@ -618,5 +934,6 @@ export async function POST(
         status: 500,
       }
     );
+
   }
 }
