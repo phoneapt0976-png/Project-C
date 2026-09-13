@@ -140,6 +140,7 @@ export default function MiniAppForm() {
         'วิเคราะห์สีภาพไม่สำเร็จ',
         error
       );
+
       setTitleTextColor('#ffffff');
       setTitleTextShadow(
         '0 2px 8px rgba(0,0,0,0.75)'
@@ -315,14 +316,17 @@ export default function MiniAppForm() {
               x + 1,
               y
             );
+
             addIfBackground(
               x - 1,
               y
             );
+
             addIfBackground(
               x,
               y + 1
             );
+
             addIfBackground(
               x,
               y - 1
@@ -406,6 +410,7 @@ export default function MiniAppForm() {
               await removeWhiteBackground(
                 dataUrl
               );
+
             setPreview(
               transparentLogo
             );
@@ -419,6 +424,7 @@ export default function MiniAppForm() {
             'ไม่สามารถทำพื้นหลังโลโก้ให้โปร่งใส:',
             error
           );
+
           setPreview(
             reader.result as string
           );
@@ -466,10 +472,12 @@ export default function MiniAppForm() {
                     'load',
                     done
                   );
+
                   img.removeEventListener(
                     'error',
                     done
                   );
+
                   resolve();
                 };
 
@@ -507,12 +515,15 @@ export default function MiniAppForm() {
         await document.fonts.load(
           '400 16px Anuphan'
         );
+
         await document.fonts.load(
           '600 19px Anuphan'
         );
+
         await document.fonts.load(
           '700 28px Anuphan'
         );
+
         await document.fonts.ready;
       } catch (error) {
         console.warn(
@@ -667,8 +678,18 @@ export default function MiniAppForm() {
     async (
       element: HTMLElement
     ): Promise<string> => {
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const renderRatio = isMobile ? 1.2 : 3;
+      /*
+       * มือถือใช้ pixelRatio ต่ำกว่า PC
+       * เพื่อป้องกัน iPhone / Android
+       * หน่วยความจำไม่พอเวลาสร้าง PNG
+       */
+      const isMobile =
+        /Android|iPhone|iPad|iPod/i.test(
+          navigator.userAgent
+        );
+
+      const renderRatio =
+        isMobile ? 1.5 : 3;
 
       await waitForImages(
         element
@@ -676,29 +697,55 @@ export default function MiniAppForm() {
 
       await waitForFonts();
 
+      /*
+       * รอให้ Browser render ทุกอย่างเสร็จ
+       */
       await new Promise<void>(
         (resolve) =>
-          setTimeout(
-            resolve,
-            800
+          requestAnimationFrame(
+            () =>
+              requestAnimationFrame(
+                () => resolve()
+              )
           )
       );
 
       return await toPng(
         element,
         {
-          pixelRatio: renderRatio,
+          pixelRatio:
+            renderRatio,
+
           backgroundColor:
             '#ffffff',
+
           cacheBust: true,
+
           skipFonts: false,
+
           imagePlaceholder:
             '',
+
           includeQueryParams:
             true,
+
           style: {
             transform:
               'none',
+          },
+
+          /*
+           * ช่วยลดปัญหาการ render
+           * รูปภาพจากมือถือ
+           */
+          filter: (node) => {
+            if (
+              node instanceof HTMLElement
+            ) {
+              return true;
+            }
+
+            return true;
           },
         }
       );
@@ -720,6 +767,170 @@ export default function MiniAppForm() {
       }
 
       return await response.blob();
+    };
+
+  /*
+   * ==========================================================
+   * MOBILE DOWNLOAD
+   * ==========================================================
+   *
+   * บน iPhone / Android:
+   *
+   * 1. สร้าง PNG
+   * 2. แปลงเป็น Blob
+   * 3. สร้าง Blob URL
+   * 4. เปิดรูปในแท็บใหม่
+   *
+   * จากนั้นผู้ใช้สามารถกด Share / Save Image
+   * จาก Browser ได้
+   *
+   * วิธีนี้ไม่พึ่ง navigator.share()
+   * ซึ่งมีปัญหากับบาง Browser / iOS version
+   */
+  const downloadOnMobile =
+    async (
+      blob: Blob,
+      filename: string
+    ) => {
+      const blobUrl =
+        URL.createObjectURL(
+          blob
+        );
+
+      /*
+       * เปิดรูปในแท็บใหม่
+       */
+      const newWindow =
+        window.open(
+          '',
+          '_blank'
+        );
+
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html lang="th">
+            <head>
+              <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+              />
+              <title>${filename}</title>
+
+              <style>
+                * {
+                  box-sizing: border-box;
+                }
+
+                html,
+                body {
+                  margin: 0;
+                  padding: 0;
+                  width: 100%;
+                  min-height: 100%;
+                  background: #111;
+                  font-family: Arial, sans-serif;
+                }
+
+                body {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: flex-start;
+                  padding: 16px;
+                  gap: 14px;
+                }
+
+                .topbar {
+                  width: 100%;
+                  max-width: 600px;
+                  color: white;
+                  text-align: center;
+                  font-size: 14px;
+                  line-height: 1.5;
+                }
+
+                .image-wrapper {
+                  width: 100%;
+                  display: flex;
+                  justify-content: center;
+                }
+
+                img {
+                  display: block;
+                  width: auto;
+                  max-width: 100%;
+                  height: auto;
+                  max-height: calc(100vh - 120px);
+                  object-fit: contain;
+                }
+
+                .download-btn {
+                  display: inline-block;
+                  background: white;
+                  color: #111827;
+                  text-decoration: none;
+                  padding: 12px 20px;
+                  border-radius: 12px;
+                  font-size: 14px;
+                  font-weight: 700;
+                }
+              </style>
+            </head>
+
+            <body>
+              <div class="topbar">
+                แตะค้างที่รูปภาพ
+                แล้วเลือก
+                <strong>บันทึกรูปภาพ</strong>
+                เพื่อบันทึกลงมือถือ
+              </div>
+
+              <div class="image-wrapper">
+                <img
+                  src="${blobUrl}"
+                  alt="${filename}"
+                />
+              </div>
+
+              <a
+                class="download-btn"
+                href="${blobUrl}"
+                download="${filename}"
+              >
+                ดาวน์โหลดรูปภาพ
+              </a>
+            </body>
+          </html>
+        `);
+
+        newWindow.document.close();
+
+        /*
+         * ไม่ revoke เร็วเกินไป
+         * เพราะ iPhone Safari ต้องใช้เวลาโหลด Blob
+         */
+        setTimeout(() => {
+          URL.revokeObjectURL(
+            blobUrl
+          );
+        }, 60000);
+
+        return;
+      }
+
+      /*
+       * ถ้า Browser บล็อก popup
+       * ให้เปิด Blob URL ในหน้าปัจจุบันแทน
+       */
+      window.location.href =
+        blobUrl;
+
+      setTimeout(() => {
+        URL.revokeObjectURL(
+          blobUrl
+        );
+      }, 60000);
     };
 
   const downloadScreen =
@@ -783,18 +994,31 @@ export default function MiniAppForm() {
             dataUrl
           );
 
-        if (isMobile && navigator.share) {
-          const file = new File([blob], filename, { type: 'image/png' });
-          try {
-            await navigator.share({
-              files: [file],
-            });
-            return;
-          } catch (shareErr: any) {
-            console.log('Share API fallback:', shareErr);
-          }
+        if (!blob) {
+          throw new Error(
+            'ไม่สามารถสร้างไฟล์ PNG ได้'
+          );
         }
 
+        /*
+         * ======================================================
+         * MOBILE
+         * ======================================================
+         */
+        if (isMobile) {
+          await downloadOnMobile(
+            blob,
+            filename
+          );
+
+          return;
+        }
+
+        /*
+         * ======================================================
+         * DESKTOP
+         * ======================================================
+         */
         const blobUrl =
           URL.createObjectURL(
             blob
@@ -821,7 +1045,8 @@ export default function MiniAppForm() {
         await new Promise<void>(
           (resolve) =>
             requestAnimationFrame(
-              () => resolve()
+              () =>
+                resolve()
             )
         );
 
@@ -835,7 +1060,7 @@ export default function MiniAppForm() {
           URL.revokeObjectURL(
             blobUrl
           );
-        }, 3000);
+        }, 5000);
       } catch (
         err: unknown
       ) {
@@ -877,6 +1102,7 @@ export default function MiniAppForm() {
           <h1 className="text-2xl font-bold text-center sm:text-left">
             ตัวอย่างรูปภาพ (พร้อมดาวน์โหลด)
           </h1>
+
           <button
             onClick={() =>
               setShowPreview(false)
@@ -888,6 +1114,10 @@ export default function MiniAppForm() {
         </div>
 
         <div className="w-full max-w-6xl flex flex-wrap justify-center gap-8">
+
+          {/* =====================================================
+              SCREEN 1
+          ===================================================== */}
           <div className="flex flex-col items-center">
             <div
               ref={screen1Ref}
@@ -946,6 +1176,7 @@ export default function MiniAppForm() {
                       </div>
                     )}
                   </div>
+
                   <div
                     className="min-w-0 flex-1 pt-0.5"
                     style={{
@@ -969,6 +1200,7 @@ export default function MiniAppForm() {
                       {appNameTH ||
                         'ชื่อแอปพลิเคชัน'}
                     </h1>
+
                     <h2
                       className="text-[18px] font-semibold leading-[1.15] mt-1 break-words"
                       style={{
@@ -1035,31 +1267,39 @@ export default function MiniAppForm() {
                     <span className="text-black font-black text-[15px] tracking-tight">
                       ทางลัด
                     </span>
+
                     <span className="text-gray-500 text-[10px] mx-1">
                       ถึง
                     </span>
+
                     <span className="text-black font-black text-[15px] tracking-tight">
                       รัฐ
                     </span>
                   </div>
+
                   <div className="text-white text-[10px] font-bold mb-1 tracking-wider">
                     ช่องทางเดียว
                   </div>
+
                   <div className="text-white font-bold text-[11px] mb-1.5 flex gap-1">
                     <span>
                       ง่าย
                     </span>
+
                     <span className="text-red-400">
                       จบ
                     </span>
+
                     <span className="text-green-300">
                       ครบทุกช่วงวัย
                     </span>
                   </div>
+
                   <div className="flex gap-1">
                     <div className="w-[52px] h-[16px] bg-black rounded-[4px] flex items-center justify-center text-[5px] text-white font-bold border border-white/30">
                       Google play
                     </div>
+
                     <div className="w-[52px] h-[16px] bg-black rounded-[4px] flex items-center justify-center text-[5px] text-white font-bold border border-white/30">
                       App Store
                     </div>
@@ -1067,6 +1307,7 @@ export default function MiniAppForm() {
                 </div>
               </div>
             </div>
+
             <button
               disabled={
                 isDownloading
@@ -1088,6 +1329,9 @@ export default function MiniAppForm() {
             </button>
           </div>
 
+          {/* =====================================================
+              SCREEN 2
+          ===================================================== */}
           <div className="flex flex-col items-center">
             <div
               ref={screen2Ref}
@@ -1099,6 +1343,7 @@ export default function MiniAppForm() {
             >
               <div className="w-[280px] h-[560px] bg-[#1a1a1a] rounded-[2.5rem] p-2 shadow-xl relative">
                 <div className="w-full h-full bg-white rounded-[2rem] overflow-hidden flex items-center justify-center relative">
+
                   <div
                     className="absolute top-0 left-1/2 -translate-x-1/2 z-30 bg-[#1a1a1a]"
                     style={{
@@ -1113,12 +1358,14 @@ export default function MiniAppForm() {
                       style={{
                         width: '34px',
                         height: '3px',
-                        borderRadius: '999px',
+                        borderRadius:
+                          '999px',
                         backgroundColor:
                           '#333333',
                       }}
                     />
                   </div>
+
                   {screenshot ? (
                     <img
                       src={screenshot}
@@ -1133,6 +1380,7 @@ export default function MiniAppForm() {
                 </div>
               </div>
             </div>
+
             <button
               disabled={
                 isDownloading
@@ -1154,6 +1402,9 @@ export default function MiniAppForm() {
             </button>
           </div>
 
+          {/* =====================================================
+              SCREEN 3
+          ===================================================== */}
           <div className="flex flex-col items-center">
             <div
               ref={screen3Ref}
@@ -1226,6 +1477,7 @@ export default function MiniAppForm() {
                       'บริการจำหน่ายอุปกรณ์ตกปลา'}
                   </h2>
                 </div>
+
                 <div className="mb-3">
                   <p
                     className="font-semibold text-[17px] leading-[1.45]"
@@ -1243,6 +1495,7 @@ export default function MiniAppForm() {
                     สะดวก ครบ จบในที่เดียว
                   </p>
                 </div>
+
                 <div className="mb-2">
                   <h3
                     className="font-bold text-[21px] leading-[1.25]"
@@ -1260,6 +1513,7 @@ export default function MiniAppForm() {
                     แพลตฟอร์ม
                   </h3>
                 </div>
+
                 <div className="mb-3">
                   <p
                     className="text-[15px] leading-[1.5]"
@@ -1276,6 +1530,7 @@ export default function MiniAppForm() {
                       'เลือกซื้ออุปกรณ์ตกปลาและสินค้าที่เกี่ยวข้องได้ง่าย ครบ จบในร้านเดียว สามารถค้นหาสินค้า เลือกดูคันเบ็ด รอก เหยื่อ และอุปกรณ์ตกปลาได้อย่างสะดวก พร้อมรายละเอียดสินค้าและข้อมูลที่ช่วยให้ตัดสินใจเลือกซื้อออนไลน์ได้ง่ายดาย'}
                   </p>
                 </div>
+
                 <div className="mb-3 pb-2">
                   <h4
                     className="font-bold text-[17px] mb-1"
@@ -1290,6 +1545,7 @@ export default function MiniAppForm() {
                   >
                     เลือกซื้อสินค้า
                   </h4>
+
                   <p
                     className="text-[13px] leading-[1.4]"
                     style={{
@@ -1304,6 +1560,7 @@ export default function MiniAppForm() {
                     ค้นหาอุปกรณ์ที่ต้องการได้ง่าย
                   </p>
                 </div>
+
                 <div className="pb-2">
                   <h4
                     className="font-bold text-[17px] mb-1"
@@ -1318,6 +1575,7 @@ export default function MiniAppForm() {
                   >
                     ดูรายละเอียดสินค้า
                   </h4>
+
                   <p
                     className="text-[13px] leading-[1.4]"
                     style={{
@@ -1345,6 +1603,7 @@ export default function MiniAppForm() {
               >
                 <div className="absolute inset-0 flex items-center justify-center px-4">
                   <div className="w-full flex items-center justify-around">
+
                     <div className="w-[72px] h-[58px] flex items-center justify-center">
                       {footerLogo ? (
                         <img
@@ -1364,6 +1623,7 @@ export default function MiniAppForm() {
                         </div>
                       )}
                     </div>
+
                     <div className="w-[78px] flex flex-col items-center justify-center">
                       <div
                         className="font-black text-[25px] leading-none tracking-[-2px]"
@@ -1376,6 +1636,7 @@ export default function MiniAppForm() {
                       >
                         DGA
                       </div>
+
                       <div
                         className="text-[5px] font-semibold mt-1 text-center leading-tight"
                         style={{
@@ -1388,6 +1649,7 @@ export default function MiniAppForm() {
                         สำนักงานพัฒนารัฐบาลดิจิทัล
                       </div>
                     </div>
+
                     <div className="w-[78px] h-[58px] flex items-center justify-center">
                       <img
                         src="/unnamed.png"
@@ -1395,10 +1657,12 @@ export default function MiniAppForm() {
                         alt="ทางรัฐ"
                       />
                     </div>
+
                   </div>
                 </div>
               </div>
             </div>
+
             <button
               disabled={
                 isDownloading
@@ -1419,6 +1683,7 @@ export default function MiniAppForm() {
                 : '↓ โหลดภาพส่วนที่ 3'}
             </button>
           </div>
+
         </div>
       </div>
     );
@@ -1442,12 +1707,15 @@ export default function MiniAppForm() {
               themeColor,
           }}
         />
+
         <div className="absolute top-[45%] -left-40 w-[360px] h-[360px] rounded-full bg-blue-100 blur-3xl opacity-50" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-blue-100 shadow-sm mb-4">
                 <span
@@ -1457,13 +1725,16 @@ export default function MiniAppForm() {
                       themeColor,
                   }}
                 />
+
                 <span className="text-xs sm:text-sm font-semibold text-gray-600">
                   MiniApp Design Generator
                 </span>
               </div>
+
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
                 สร้าง Screenshot
                 <br />
+
                 <span
                   style={{
                     color:
@@ -1473,6 +1744,7 @@ export default function MiniAppForm() {
                   MiniApp ของคุณ
                 </span>
               </h1>
+
               <p className="mt-4 text-sm sm:text-base text-gray-500 leading-relaxed max-w-2xl">
                 กรอกข้อมูลเพียงไม่กี่ขั้นตอน
                 ระบบจะสร้างภาพตัวอย่าง MiniApp
@@ -1480,11 +1752,13 @@ export default function MiniAppForm() {
                 ให้พร้อมใช้งานและดาวน์โหลด
               </p>
             </div>
+
           </div>
         </div>
 
         <div className="bg-white/85 backdrop-blur-xl border border-white rounded-2xl shadow-sm p-3 sm:p-4 mb-7">
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
+
             <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-xl bg-blue-50">
               <div
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm"
@@ -1495,49 +1769,63 @@ export default function MiniAppForm() {
               >
                 01
               </div>
+
               <div className="min-w-0">
                 <div className="text-[10px] sm:text-xs text-gray-400">
                   STEP 01
                 </div>
+
                 <div className="text-xs sm:text-sm font-bold text-gray-800 truncate">
                   ข้อมูล MiniApp
                 </div>
               </div>
             </div>
+
             <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-xl">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-bold flex-shrink-0">
                 02
               </div>
+
               <div className="min-w-0">
                 <div className="text-[10px] sm:text-xs text-gray-400">
                   STEP 02
                 </div>
+
                 <div className="text-xs sm:text-sm font-bold text-gray-600 truncate">
                   ภาพหน้าจอ
                 </div>
               </div>
             </div>
+
             <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-xl">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-bold flex-shrink-0">
                 03
               </div>
+
               <div className="min-w-0">
                 <div className="text-[10px] sm:text-xs text-gray-400">
                   STEP 03
                 </div>
+
                 <div className="text-xs sm:text-sm font-bold text-gray-600 truncate">
                   รายละเอียด
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 items-start">
+
           <div className="space-y-6">
+
+            {/* THEME COLOR */}
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
               <div className="p-5 sm:p-6">
+
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
                   <div className="flex items-center gap-3">
                     <div
                       className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-sm"
@@ -1548,16 +1836,20 @@ export default function MiniAppForm() {
                     >
                       🎨
                     </div>
+
                     <div>
                       <h2 className="font-bold text-gray-900">
                         สีหลักของแอป
                       </h2>
+
                       <p className="text-xs text-gray-400 mt-0.5">
                         Theme Color
                       </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-3">
+
                     <div
                       className="w-10 h-10 rounded-xl border border-white shadow-md"
                       style={{
@@ -1565,14 +1857,17 @@ export default function MiniAppForm() {
                           themeColor,
                       }}
                     />
+
                     <div>
                       <div className="text-xs text-gray-400">
                         สีที่เลือก
                       </div>
+
                       <div className="text-sm font-bold text-gray-700 uppercase">
                         {themeColor}
                       </div>
                     </div>
+
                     <input
                       type="color"
                       value={themeColor}
@@ -1583,13 +1878,17 @@ export default function MiniAppForm() {
                       }
                       className="w-12 h-10 p-1 bg-white border border-gray-200 rounded-xl cursor-pointer"
                     />
+
                   </div>
+
                 </div>
+
                 <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <div className="flex items-center gap-2">
                     <span className="text-xs">
                       💡
                     </span>
+
                     <p className="text-xs text-gray-500">
                       สีนี้จะถูกนำไปใช้กับส่วนต่าง ๆ
                       ของ Screenshot เช่น Footer
@@ -1597,12 +1896,17 @@ export default function MiniAppForm() {
                     </p>
                   </div>
                 </div>
+
               </div>
             </div>
 
+            {/* MINIAPP INFO */}
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
+
               <div className="px-5 sm:px-6 py-5 border-b border-gray-100">
+
                 <div className="flex items-center gap-3">
+
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-sm"
                     style={{
@@ -1612,27 +1916,37 @@ export default function MiniAppForm() {
                   >
                     1
                   </div>
+
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">
                       ข้อมูล MiniApp
                     </h2>
+
                     <p className="text-xs text-gray-400 mt-0.5">
                       โลโก้หน่วยงานและชื่อแอปพลิเคชัน
                     </p>
                   </div>
+
                   <div className="ml-auto hidden sm:block">
                     <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-[11px] font-semibold">
                       Required
                     </span>
                   </div>
+
                 </div>
+
               </div>
+
               <div className="p-5 sm:p-6">
+
                 <div className="grid grid-cols-1 md:grid-cols-[150px_minmax(0,1fr)] gap-7">
+
                   <div>
+
                     <label className="block text-xs font-semibold text-gray-500 mb-3">
                       โลโก้หน่วยงาน
                     </label>
+
                     <label
                       className={`group relative w-32 h-32 rounded-3xl flex flex-col items-center justify-center transition cursor-pointer overflow-hidden ${
                         orgLogo
@@ -1652,6 +1966,7 @@ export default function MiniAppForm() {
                           )
                         }
                       />
+
                       {orgLogo ? (
                         <>
                           <img
@@ -1659,6 +1974,7 @@ export default function MiniAppForm() {
                             className="w-full h-full object-contain"
                             alt="Org Logo"
                           />
+
                           <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                             <span className="text-white text-xs font-semibold">
                               เปลี่ยนโลโก้
@@ -1676,28 +1992,35 @@ export default function MiniAppForm() {
                           >
                             +
                           </div>
+
                           <span className="text-xs font-semibold text-gray-500 mt-2">
                             อัปโหลดโลโก้
                           </span>
                         </>
                       )}
                     </label>
+
                     <p className="text-[10px] text-gray-400 leading-relaxed mt-2">
                       ระบบจะลบพื้นหลังสีขาว
                       <br />
                       อัตโนมัติ
                     </p>
+
                   </div>
+
                   <div className="space-y-5 min-w-0">
+
                     <div>
                       <label className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
                         <span>
                           ชื่อแอปพลิเคชัน (ภาษาไทย)
                         </span>
+
                         <span className="text-gray-300">
                           TH
                         </span>
                       </label>
+
                       <input
                         type="text"
                         value={appNameTH}
@@ -1710,15 +2033,18 @@ export default function MiniAppForm() {
                         className="w-full h-12 border border-gray-200 bg-gray-50/70 rounded-xl px-4 text-sm text-gray-800 placeholder:text-gray-300 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                       />
                     </div>
+
                     <div>
                       <label className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
                         <span>
                           Application Name (English)
                         </span>
+
                         <span className="text-gray-300">
                           EN
                         </span>
                       </label>
+
                       <input
                         type="text"
                         value={appNameEN}
@@ -1731,14 +2057,21 @@ export default function MiniAppForm() {
                         className="w-full h-12 border border-gray-200 bg-gray-50/70 rounded-xl px-4 text-sm text-gray-800 placeholder:text-gray-300 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                       />
                     </div>
+
                   </div>
+
                 </div>
+
               </div>
             </div>
 
+            {/* SCREENSHOT */}
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
+
               <div className="px-5 sm:px-6 py-5 border-b border-gray-100">
+
                 <div className="flex items-center gap-3">
+
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-sm"
                     style={{
@@ -1748,19 +2081,27 @@ export default function MiniAppForm() {
                   >
                     2
                   </div>
+
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">
                       ภาพแคปหน้าจอแอป
                     </h2>
+
                     <p className="text-xs text-gray-400 mt-0.5">
                       ภาพจะถูกใส่ลงในกรอบโทรศัพท์
                     </p>
                   </div>
+
                 </div>
+
               </div>
+
               <div className="p-5 sm:p-6">
+
                 <div className="flex flex-col sm:flex-row items-center gap-6">
+
                   <label className="group relative w-52 h-[350px] bg-gray-50 rounded-[2rem] flex flex-col items-center justify-center text-blue-500 transition cursor-pointer overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/40">
+
                     <input
                       type="file"
                       accept="image/*"
@@ -1772,6 +2113,7 @@ export default function MiniAppForm() {
                         )
                       }
                     />
+
                     {screenshot ? (
                       <>
                         <img
@@ -1779,6 +2121,7 @@ export default function MiniAppForm() {
                           className="w-full h-full object-cover"
                           alt="Screenshot"
                         />
+
                         <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                           <span className="text-white text-xs font-semibold">
                             เปลี่ยนภาพ
@@ -1790,59 +2133,85 @@ export default function MiniAppForm() {
                         <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl text-blue-500">
                           ↑
                         </div>
+
                         <span className="text-sm font-semibold text-gray-600 mt-3">
                           อัปโหลดภาพหน้าจอ
                         </span>
+
                         <span className="text-xs text-gray-400 mt-1">
                           แนวตั้ง 1080 × 1920
                         </span>
                       </>
                     )}
+
                   </label>
+
                   <div className="flex-1 w-full">
+
                     <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+
                       <div className="flex items-center gap-3 mb-4">
+
                         <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
                           📱
                         </div>
+
                         <div>
                           <h3 className="text-sm font-bold text-gray-800">
                             Phone Preview
                           </h3>
+
                           <p className="text-xs text-gray-400">
                             iPhone-style frame
                           </p>
                         </div>
+
                       </div>
+
                       <div className="space-y-3">
+
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-green-400" />
+
                           <span className="text-xs text-gray-500">
                             รองรับไฟล์รูปภาพทั่วไป
                           </span>
                         </div>
+
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-blue-400" />
+
                           <span className="text-xs text-gray-500">
                             ภาพจะถูกครอบให้พอดีกับกรอบ
                           </span>
                         </div>
+
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-purple-400" />
+
                           <span className="text-xs text-gray-500">
                             แนะนำภาพแนวตั้ง
                           </span>
                         </div>
+
                       </div>
+
                     </div>
+
                   </div>
+
                 </div>
+
               </div>
             </div>
 
+            {/* SERVICE DETAILS */}
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
+
               <div className="px-5 sm:px-6 py-5 border-b border-gray-100">
+
                 <div className="flex items-center gap-3">
+
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-sm"
                     style={{
@@ -1852,26 +2221,37 @@ export default function MiniAppForm() {
                   >
                     3
                   </div>
+
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">
                       รายละเอียดบริการ
                     </h2>
+
                     <p className="text-xs text-gray-400 mt-0.5">
                       ข้อมูลที่จะปรากฏใน Screenshot ส่วนที่ 3
                     </p>
                   </div>
+
                 </div>
+
               </div>
+
               <div className="p-5 sm:p-6 space-y-6">
+
                 <div>
+
                   <label className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
+
                     <span>
                       Header Service
                     </span>
+
                     <span className="text-gray-300">
                       HEADER
                     </span>
+
                   </label>
+
                   <input
                     type="text"
                     value={headerService}
@@ -1883,16 +2263,23 @@ export default function MiniAppForm() {
                     placeholder="เช่น บริการข้อมูลและซื้ออุปกรณ์ตกปลา"
                     className="w-full h-12 border border-gray-200 bg-gray-50/70 rounded-xl px-4 text-sm text-gray-800 placeholder:text-gray-300 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                   />
+
                 </div>
+
                 <div>
+
                   <label className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
+
                     <span>
                       Detail App
                     </span>
+
                     <span className="text-gray-300">
                       CONTENT
                     </span>
+
                   </label>
+
                   <textarea
                     value={detail1}
                     onChange={(e) =>
@@ -1903,17 +2290,25 @@ export default function MiniAppForm() {
                     placeholder="รายละเอียดบริการ เช่น เลือกซื้ออุปกรณ์ตกปลาและสินค้าที่เกี่ยวข้องได้ง่าย ครบ จบในร้านเดียว..."
                     className="w-full border border-gray-200 bg-gray-50/70 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-300 h-36 resize-none outline-none transition focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                   />
+
                   <div className="flex justify-end mt-1.5">
+
                     <span className="text-[10px] text-gray-400">
                       {detail1.length} ตัวอักษร
                     </span>
+
                   </div>
+
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+
                     <label className="block text-xs font-semibold text-gray-500 mb-3">
                       โลโก้พันธมิตร
                     </label>
+
                     <label
                       className={`group relative w-24 h-24 rounded-2xl flex flex-col items-center justify-center text-blue-500 transition cursor-pointer overflow-hidden ${
                         footerLogo
@@ -1921,6 +2316,7 @@ export default function MiniAppForm() {
                           : 'bg-white border-2 border-dashed border-gray-200 hover:border-blue-300'
                       }`}
                     >
+
                       <input
                         type="file"
                         accept="image/*"
@@ -1933,6 +2329,7 @@ export default function MiniAppForm() {
                           )
                         }
                       />
+
                       {footerLogo ? (
                         <>
                           <img
@@ -1940,10 +2337,13 @@ export default function MiniAppForm() {
                             className="w-full h-full object-contain"
                             alt="Footer Logo"
                           />
+
                           <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+
                             <span className="text-white text-[10px] font-semibold">
                               เปลี่ยน
                             </span>
+
                           </div>
                         </>
                       ) : (
@@ -1951,21 +2351,29 @@ export default function MiniAppForm() {
                           <span className="text-2xl">
                             +
                           </span>
+
                           <span className="text-xs font-semibold text-gray-500 mt-1">
                             อัปโหลด
                           </span>
                         </>
                       )}
+
                     </label>
+
                     <p className="text-[10px] text-gray-400 mt-2">
                       ลบพื้นหลังสีขาวอัตโนมัติ
                     </p>
+
                   </div>
+
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+
                     <label className="block text-xs font-semibold text-gray-500 mb-3">
                       QR Code ทางรัฐ
                     </label>
+
                     <label className="group relative w-24 h-24 rounded-2xl bg-white border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-blue-500 hover:border-blue-300 transition cursor-pointer overflow-hidden">
+
                       <input
                         type="file"
                         accept="image/*"
@@ -1977,6 +2385,7 @@ export default function MiniAppForm() {
                           )
                         }
                       />
+
                       {qrCode ? (
                         <>
                           <img
@@ -1984,10 +2393,13 @@ export default function MiniAppForm() {
                             className="w-full h-full object-cover"
                             alt="QR Code"
                           />
+
                           <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+
                             <span className="text-white text-[10px] font-semibold">
                               เปลี่ยน
                             </span>
+
                           </div>
                         </>
                       ) : (
@@ -1995,30 +2407,45 @@ export default function MiniAppForm() {
                           <span className="text-2xl">
                             +
                           </span>
+
                           <span className="text-xs font-semibold text-gray-500 mt-1">
                             QR Code
                           </span>
                         </>
                       )}
+
                     </label>
+
                   </div>
+
                 </div>
+
               </div>
             </div>
+
           </div>
 
+          {/* SUMMARY */}
           <div className="lg:sticky lg:top-6 space-y-5">
+
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
+
               <div className="p-5">
+
                 <div className="flex items-center justify-between mb-5">
+
                   <div>
+
                     <h2 className="font-bold text-gray-900">
                       Project Summary
                     </h2>
+
                     <p className="text-xs text-gray-400 mt-0.5">
                       สรุปข้อมูลที่กรอก
                     </p>
+
                   </div>
+
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm"
                     style={{
@@ -2028,10 +2455,15 @@ export default function MiniAppForm() {
                   >
                     ✦
                   </div>
+
                 </div>
+
                 <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 mb-4">
+
                   <div className="flex items-center gap-3">
+
                     <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+
                       {orgLogo ? (
                         <img
                           src={orgLogo}
@@ -2043,30 +2475,43 @@ export default function MiniAppForm() {
                           +
                         </span>
                       )}
+
                     </div>
+
                     <div className="min-w-0">
+
                       <div className="text-[10px] text-gray-400 uppercase font-semibold">
                         Application
                       </div>
+
                       <div className="text-sm font-bold text-gray-800 truncate mt-0.5">
                         {appNameTH ||
                           'ชื่อแอปพลิเคชัน'}
                       </div>
+
                       <div className="text-[11px] text-gray-400 truncate">
                         {appNameEN ||
                           'Application Name'}
                       </div>
+
                     </div>
+
                   </div>
+
                 </div>
+
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
+
                   <span className="text-xs text-gray-500">
                     Theme Color
                   </span>
+
                   <div className="flex items-center gap-2">
+
                     <span className="text-[10px] text-gray-400 uppercase">
                       {themeColor}
                     </span>
+
                     <span
                       className="w-5 h-5 rounded-full border border-white shadow"
                       style={{
@@ -2074,13 +2519,19 @@ export default function MiniAppForm() {
                           themeColor,
                       }}
                     />
+
                   </div>
+
                 </div>
+
                 <div className="py-3 space-y-3">
+
                   <div className="flex items-center justify-between">
+
                     <span className="text-xs text-gray-500">
                       โลโก้หน่วยงาน
                     </span>
+
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded-full ${
                         orgLogo
@@ -2092,11 +2543,15 @@ export default function MiniAppForm() {
                         ? 'พร้อม'
                         : 'ยังไม่มี'}
                     </span>
+
                   </div>
+
                   <div className="flex items-center justify-between">
+
                     <span className="text-xs text-gray-500">
                       ภาพหน้าจอ
                     </span>
+
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded-full ${
                         screenshot
@@ -2108,11 +2563,15 @@ export default function MiniAppForm() {
                         ? 'พร้อม'
                         : 'ยังไม่มี'}
                     </span>
+
                   </div>
+
                   <div className="flex items-center justify-between">
+
                     <span className="text-xs text-gray-500">
                       รายละเอียดบริการ
                     </span>
+
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded-full ${
                         headerService ||
@@ -2126,9 +2585,13 @@ export default function MiniAppForm() {
                         ? 'พร้อม'
                         : 'ยังไม่มี'}
                     </span>
+
                   </div>
+
                 </div>
+
               </div>
+
               <div
                 className="h-2"
                 style={{
@@ -2136,14 +2599,22 @@ export default function MiniAppForm() {
                     themeColor,
                 }}
               />
+
             </div>
+
           </div>
+
         </div>
 
+        {/* CREATE BUTTON */}
         <div className="mt-8 pb-8">
+
           <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-4 sm:p-5">
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
               <div className="flex items-center gap-3">
+
                 <div
                   className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md flex-shrink-0"
                   style={{
@@ -2153,16 +2624,22 @@ export default function MiniAppForm() {
                 >
                   ✨
                 </div>
+
                 <div>
+
                   <div className="text-sm font-bold text-gray-800">
                     พร้อมสร้าง Screenshot แล้วหรือยัง?
                   </div>
+
                   <div className="text-xs text-gray-400 mt-0.5">
                     ระบบจะสร้างภาพประกอบ AI
                     และเปิดหน้า Preview ให้ทันที
                   </div>
+
                 </div>
+
               </div>
+
               <button
                 onClick={
                   handlePreviewClick
@@ -2178,11 +2655,13 @@ export default function MiniAppForm() {
                       : themeColor,
                 }}
               >
+
                 {isGenerating ? (
                   <>
                     <span className="animate-spin">
                       ◌
                     </span>
+
                     <span>
                       กำลังสร้างภาพ...
                     </span>
@@ -2192,15 +2671,21 @@ export default function MiniAppForm() {
                     <span>
                       สร้าง Screenshot
                     </span>
+
                     <span>
                       ✨
                     </span>
                   </>
                 )}
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
     </div>
   );
