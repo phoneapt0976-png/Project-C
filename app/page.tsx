@@ -1,507 +1,927 @@
 ﻿'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
+
 import '@fontsource/anuphan/400.css';
 import '@fontsource/anuphan/600.css';
 import '@fontsource/anuphan/700.css';
+
 import { toPng } from 'html-to-image';
 
 export default function MiniAppForm() {
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] =
+    useState(false);
 
-  const [orgLogo, setOrgLogo] = useState<string | null>(null);
-  const [appLogo, setAppLogo] = useState<string | null>(null);
-  const [screenshot, setScreenshot] = useState<string | null>(null);
-  const [footerLogo, setFooterLogo] = useState<string | null>(null);
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [orgLogo, setOrgLogo] =
+    useState<string | null>(null);
 
-  const [appNameTH, setAppNameTH] = useState('');
-  const [appNameEN, setAppNameEN] = useState('');
-  const [headerService, setHeaderService] = useState('');
-  const [detail1, setDetail1] = useState('');
+  const [appLogo, setAppLogo] =
+    useState<string | null>(null);
 
-  const [themeColor, setThemeColor] = useState('#0c47a1');
+  const [screenshot, setScreenshot] =
+    useState<string | null>(null);
 
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [footerLogo, setFooterLogo] =
+    useState<string | null>(null);
 
-  const [titleTextColor, setTitleTextColor] = useState('#ffffff');
-  const [titleTextShadow, setTitleTextShadow] = useState(
-    '0 2px 8px rgba(0,0,0,0.75)'
-  );
+  const [qrCode, setQrCode] =
+    useState<string | null>(null);
 
-  const screen1Ref = useRef<HTMLDivElement>(null);
-  const screen2Ref = useRef<HTMLDivElement>(null);
-  const screen3Ref = useRef<HTMLDivElement>(null);
+  const [appNameTH, setAppNameTH] =
+    useState('');
 
-  const analyzeImageTextColor = async (
-    imageSrc: string
-  ): Promise<void> => {
+  const [appNameEN, setAppNameEN] =
+    useState('');
+
+  const [headerService, setHeaderService] =
+    useState('');
+
+  const [detail1, setDetail1] =
+    useState('');
+
+  const [themeColor, setThemeColor] =
+    useState('#0c47a1');
+
+  const [isDownloading, setIsDownloading] =
+    useState(false);
+
+  const [isGenerating, setIsGenerating] =
+    useState(false);
+
+  const [titleTextColor, setTitleTextColor] =
+    useState('#ffffff');
+
+  const [titleTextShadow, setTitleTextShadow] =
+    useState(
+      '0 2px 8px rgba(0,0,0,0.75)'
+    );
+
+  const screen1Ref =
+    useRef<HTMLDivElement>(null);
+
+  const screen2Ref =
+    useRef<HTMLDivElement>(null);
+
+  const screen3Ref =
+    useRef<HTMLDivElement>(null);
+
+  /*
+   * ==========================================================
+   * CONVERT IMAGE URL -> DATA URL
+   * ==========================================================
+   *
+   * สำคัญมากสำหรับ html-to-image
+   *
+   * ถ้า AI ส่ง URL จากภายนอกโดยตรง
+   * html-to-image อาจเจอ CORS / Event
+   *
+   * เราจึงแปลงเป็น Data URL ก่อน
+   */
+  const imageToDataUrl = async (
+    src: string
+  ): Promise<string> => {
+    if (!src) {
+      throw new Error(
+        'ไม่พบแหล่งที่มาของรูปภาพ'
+      );
+    }
+
+    /*
+     * ถ้าเป็น Data URL อยู่แล้ว
+     * ไม่ต้องแปลงอีก
+     */
+    if (
+      src.startsWith(
+        'data:image/'
+      )
+    ) {
+      return src;
+    }
+
+    /*
+     * Blob URL ก็ไม่จำเป็นต้อง fetch
+     * แต่เพื่อความเสถียรให้พยายามแปลง
+     */
     try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
+      const response =
+        await fetch(src, {
+          mode: 'cors',
+          cache: 'no-store',
+        });
 
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () =>
-          reject(new Error('ไม่สามารถวิเคราะห์สีภาพได้'));
-        img.src = imageSrc;
-      });
+      if (!response.ok) {
+        throw new Error(
+          `โหลดรูปภาพไม่สำเร็จ (${response.status})`
+        );
+      }
 
-      const canvas = document.createElement('canvas');
-      const sampleWidth = 360;
-      const sampleHeight = 190;
+      const blob =
+        await response.blob();
 
-      canvas.width = sampleWidth;
-      canvas.height = sampleHeight;
+      if (
+        !blob.type.startsWith(
+          'image/'
+        )
+      ) {
+        throw new Error(
+          'ข้อมูลที่ได้รับไม่ใช่ไฟล์รูปภาพ'
+        );
+      }
 
-      const ctx = canvas.getContext('2d');
+      return await new Promise<string>(
+        (resolve, reject) => {
+          const reader =
+            new FileReader();
 
-      if (!ctx) return;
+          reader.onloadend = () => {
+            const result =
+              reader.result;
 
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        img.width,
-        Math.min(
-          img.height,
-          (img.width / sampleWidth) * sampleHeight
-        ),
-        0,
-        0,
-        sampleWidth,
-        sampleHeight
-      );
+            if (
+              typeof result ===
+              'string'
+            ) {
+              resolve(result);
+            } else {
+              reject(
+                new Error(
+                  'ไม่สามารถแปลงรูปภาพเป็น Data URL ได้'
+                )
+              );
+            }
+          };
 
-      const imageData = ctx.getImageData(
-        0,
-        0,
-        sampleWidth,
-        sampleHeight
-      );
+          reader.onerror = () => {
+            reject(
+              new Error(
+                'ไม่สามารถอ่านข้อมูลรูปภาพได้'
+              )
+            );
+          };
 
-      const data = imageData.data;
-
-      let totalLuminance = 0;
-      let totalWeight = 0;
-
-      for (let y = 0; y < sampleHeight; y += 4) {
-        for (let x = 0; x < sampleWidth; x += 4) {
-          const index = (y * sampleWidth + x) * 4;
-
-          const r = data[index];
-          const g = data[index + 1];
-          const b = data[index + 2];
-          const a = data[index + 3];
-
-          if (a < 50) continue;
-
-          const luminance =
-            0.2126 * r +
-            0.7152 * g +
-            0.0722 * b;
-
-          const centerDistance =
-            Math.abs(x - sampleWidth / 2) /
-            (sampleWidth / 2);
-
-          const weight =
-            1 - centerDistance * 0.25;
-
-          totalLuminance += luminance * weight;
-          totalWeight += weight;
+          reader.readAsDataURL(
+            blob
+          );
         }
-      }
-
-      if (totalWeight === 0) {
-        setTitleTextColor('#ffffff');
-        setTitleTextShadow(
-          '0 2px 8px rgba(0,0,0,0.75)'
-        );
-        return;
-      }
-
-      const averageLuminance =
-        totalLuminance / totalWeight;
-
-      if (averageLuminance < 145) {
-        setTitleTextColor('#ffffff');
-        setTitleTextShadow(
-          '0 2px 8px rgba(0,0,0,0.8)'
-        );
-      } else {
-        setTitleTextColor('#111827');
-        setTitleTextShadow(
-          '0 2px 8px rgba(255,255,255,0.75)'
-        );
-      }
+      );
     } catch (error) {
       console.warn(
-        'วิเคราะห์สีภาพไม่สำเร็จ',
+        'ไม่สามารถแปลงรูปภาพเป็น Data URL:',
         error
       );
 
-      setTitleTextColor('#ffffff');
-      setTitleTextShadow(
-        '0 2px 8px rgba(0,0,0,0.75)'
+      /*
+       * ถ้าเป็น URL ภายในเว็บ
+       * ให้ใช้ URL เดิมได้
+       */
+      if (
+        src.startsWith('/') ||
+        src.startsWith(
+          window.location.origin
+        )
+      ) {
+        return src;
+      }
+
+      throw new Error(
+        'ไม่สามารถโหลดภาพ AI สำหรับสร้าง Screenshot ได้ เนื่องจากเซิร์ฟเวอร์ของภาพไม่อนุญาตการเข้าถึงจากเว็บไซต์นี้'
       );
     }
   };
 
+  /*
+   * ==========================================================
+   * ANALYZE IMAGE TEXT COLOR
+   * ==========================================================
+   */
+  const analyzeImageTextColor =
+    async (
+      imageSrc: string
+    ): Promise<void> => {
+      try {
+        const safeImageSrc =
+          await imageToDataUrl(
+            imageSrc
+          );
+
+        const img =
+          new Image();
+
+        await new Promise<void>(
+          (
+            resolve,
+            reject
+          ) => {
+            img.onload = () =>
+              resolve();
+
+            img.onerror = () =>
+              reject(
+                new Error(
+                  'ไม่สามารถวิเคราะห์สีภาพได้'
+                )
+              );
+
+            img.src =
+              safeImageSrc;
+          }
+        );
+
+        const canvas =
+          document.createElement(
+            'canvas'
+          );
+
+        const sampleWidth =
+          360;
+
+        const sampleHeight =
+          190;
+
+        canvas.width =
+          sampleWidth;
+
+        canvas.height =
+          sampleHeight;
+
+        const ctx =
+          canvas.getContext(
+            '2d'
+          );
+
+        if (!ctx) return;
+
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          img.width,
+          Math.min(
+            img.height,
+            (img.width /
+              sampleWidth) *
+              sampleHeight
+          ),
+          0,
+          0,
+          sampleWidth,
+          sampleHeight
+        );
+
+        const imageData =
+          ctx.getImageData(
+            0,
+            0,
+            sampleWidth,
+            sampleHeight
+          );
+
+        const data =
+          imageData.data;
+
+        let totalLuminance = 0;
+        let totalWeight = 0;
+
+        for (
+          let y = 0;
+          y < sampleHeight;
+          y += 4
+        ) {
+          for (
+            let x = 0;
+            x < sampleWidth;
+            x += 4
+          ) {
+            const index =
+              (y *
+                sampleWidth +
+                x) *
+              4;
+
+            const r =
+              data[index];
+
+            const g =
+              data[index + 1];
+
+            const b =
+              data[index + 2];
+
+            const a =
+              data[index + 3];
+
+            if (a < 50) continue;
+
+            const luminance =
+              0.2126 * r +
+              0.7152 * g +
+              0.0722 * b;
+
+            const centerDistance =
+              Math.abs(
+                x -
+                  sampleWidth /
+                    2
+              ) /
+              (sampleWidth / 2);
+
+            const weight =
+              1 -
+              centerDistance *
+                0.25;
+
+            totalLuminance +=
+              luminance *
+              weight;
+
+            totalWeight +=
+              weight;
+          }
+        }
+
+        if (totalWeight === 0) {
+          setTitleTextColor(
+            '#ffffff'
+          );
+
+          setTitleTextShadow(
+            '0 2px 8px rgba(0,0,0,0.75)'
+          );
+
+          return;
+        }
+
+        const averageLuminance =
+          totalLuminance /
+          totalWeight;
+
+        if (
+          averageLuminance <
+          145
+        ) {
+          setTitleTextColor(
+            '#ffffff'
+          );
+
+          setTitleTextShadow(
+            '0 2px 8px rgba(0,0,0,0.8)'
+          );
+        } else {
+          setTitleTextColor(
+            '#111827'
+          );
+
+          setTitleTextShadow(
+            '0 2px 8px rgba(255,255,255,0.75)'
+          );
+        }
+      } catch (error) {
+        console.warn(
+          'วิเคราะห์สีภาพไม่สำเร็จ',
+          error
+        );
+
+        setTitleTextColor(
+          '#ffffff'
+        );
+
+        setTitleTextShadow(
+          '0 2px 8px rgba(0,0,0,0.75)'
+        );
+      }
+    };
+
   useEffect(() => {
     if (!appLogo) {
-      setTitleTextColor('#ffffff');
+      setTitleTextColor(
+        '#ffffff'
+      );
+
       setTitleTextShadow(
         '0 2px 8px rgba(0,0,0,0.75)'
       );
+
       return;
     }
 
-    analyzeImageTextColor(appLogo);
+    analyzeImageTextColor(
+      appLogo
+    );
   }, [appLogo]);
 
+  /*
+   * ==========================================================
+   * REMOVE WHITE BACKGROUND
+   * ==========================================================
+   */
   const removeWhiteBackground = (
     dataUrl: string,
     tolerance = 30
   ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
+    return new Promise(
+      (
+        resolve,
+        reject
+      ) => {
+        const img =
+          new Image();
 
-      img.onload = () => {
-        try {
-          const width =
-            img.naturalWidth || img.width;
+        img.onload = () => {
+          try {
+            const width =
+              img.naturalWidth ||
+              img.width;
 
-          const height =
-            img.naturalHeight || img.height;
+            const height =
+              img.naturalHeight ||
+              img.height;
 
-          const canvas =
-            document.createElement('canvas');
+            const canvas =
+              document.createElement(
+                'canvas'
+              );
 
-          canvas.width = width;
-          canvas.height = height;
+            canvas.width =
+              width;
 
-          const ctx = canvas.getContext(
-            '2d',
-            {
-              willReadFrequently: true,
+            canvas.height =
+              height;
+
+            const ctx =
+              canvas.getContext(
+                '2d',
+                {
+                  willReadFrequently:
+                    true,
+                }
+              );
+
+            if (!ctx) {
+              reject(
+                new Error(
+                  'ไม่สามารถสร้าง Canvas ได้'
+                )
+              );
+
+              return;
             }
-          );
 
-          if (!ctx) {
-            reject(
-              new Error(
-                'ไม่สามารถสร้าง Canvas ได้'
-              )
-            );
-            return;
-          }
-
-          ctx.drawImage(
-            img,
-            0,
-            0,
-            width,
-            height
-          );
-
-          const imageData =
-            ctx.getImageData(
+            ctx.drawImage(
+              img,
               0,
               0,
               width,
               height
             );
 
-          const data =
-            imageData.data;
-
-          const isWhiteLike = (
-            index: number
-          ) => {
-            const r = data[index];
-            const g = data[index + 1];
-            const b = data[index + 2];
-            const a = data[index + 3];
-
-            if (a === 0) return false;
-
-            return (
-              r >= 255 - tolerance &&
-              g >= 255 - tolerance &&
-              b >= 255 - tolerance
-            );
-          };
-
-          const visited =
-            new Uint8Array(
-              width * height
-            );
-
-          const queue: number[] = [];
-
-          const addIfBackground = (
-            x: number,
-            y: number
-          ) => {
-            if (
-              x < 0 ||
-              x >= width ||
-              y < 0 ||
-              y >= height
-            ) {
-              return;
-            }
-
-            const pixel =
-              y * width + x;
-
-            if (visited[pixel]) {
-              return;
-            }
-
-            const index =
-              pixel * 4;
-
-            if (!isWhiteLike(index)) {
-              return;
-            }
-
-            visited[pixel] = 1;
-            queue.push(pixel);
-          };
-
-          for (
-            let x = 0;
-            x < width;
-            x++
-          ) {
-            addIfBackground(x, 0);
-            addIfBackground(
-              x,
-              height - 1
-            );
-          }
-
-          for (
-            let y = 0;
-            y < height;
-            y++
-          ) {
-            addIfBackground(0, y);
-            addIfBackground(
-              width - 1,
-              y
-            );
-          }
-
-          let queueIndex = 0;
-
-          while (
-            queueIndex <
-            queue.length
-          ) {
-            const pixel =
-              queue[queueIndex++];
-
-            const x =
-              pixel % width;
-
-            const y =
-              Math.floor(
-                pixel / width
+            const imageData =
+              ctx.getImageData(
+                0,
+                0,
+                width,
+                height
               );
 
-            addIfBackground(
-              x + 1,
-              y
-            );
+            const data =
+              imageData.data;
 
-            addIfBackground(
-              x - 1,
-              y
-            );
+            const isWhiteLike = (
+              index: number
+            ) => {
+              const r =
+                data[index];
 
-            addIfBackground(
-              x,
-              y + 1
-            );
+              const g =
+                data[index + 1];
 
-            addIfBackground(
-              x,
-              y - 1
-            );
-          }
+              const b =
+                data[index + 2];
 
-          for (
-            let pixel = 0;
-            pixel < visited.length;
-            pixel++
-          ) {
-            if (visited[pixel]) {
-              data[
-                pixel * 4 + 3
-              ] = 0;
-            }
-          }
+              const a =
+                data[index + 3];
 
-          ctx.putImageData(
-            imageData,
-            0,
-            0
-          );
+              if (a === 0)
+                return false;
 
-          resolve(
-            canvas.toDataURL(
-              'image/png'
-            )
-          );
-        } catch (error) {
-          reject(error);
-        }
-      };
+              return (
+                r >=
+                  255 -
+                    tolerance &&
+                g >=
+                  255 -
+                    tolerance &&
+                b >=
+                  255 -
+                    tolerance
+              );
+            };
 
-      img.onerror = () => {
-        reject(
-          new Error(
-            'ไม่สามารถโหลดรูปภาพเพื่อทำพื้นหลังโปร่งใสได้'
-          )
-        );
-      };
-
-      img.src = dataUrl;
-    });
-  };
-
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    setPreview: React.Dispatch<
-      React.SetStateAction<string | null>
-    >,
-    removeBackground = false
-  ) => {
-    const file =
-      e.target.files?.[0];
-
-    if (!file) return;
-
-    if (
-      !file.type.startsWith(
-        'image/'
-      )
-    ) {
-      alert(
-        'กรุณาเลือกไฟล์รูปภาพ'
-      );
-      return;
-    }
-
-    const reader =
-      new FileReader();
-
-    reader.onloadend =
-      async () => {
-        try {
-          const dataUrl =
-            reader.result as string;
-
-          if (removeBackground) {
-            const transparentLogo =
-              await removeWhiteBackground(
-                dataUrl
+            const visited =
+              new Uint8Array(
+                width * height
               );
 
-            setPreview(
-              transparentLogo
-            );
-          } else {
-            setPreview(
-              dataUrl
-            );
-          }
-        } catch (error) {
-          console.error(
-            'ไม่สามารถทำพื้นหลังโลโก้ให้โปร่งใส:',
-            error
-          );
+            const queue: number[] =
+              [];
 
-          setPreview(
-            reader.result as string
-          );
-        }
-      };
-
-    reader.onerror = () => {
-      alert(
-        'ไม่สามารถอ่านไฟล์รูปภาพได้'
-      );
-    };
-
-    reader.readAsDataURL(
-      file
-    );
-
-    e.target.value = '';
-  };
-
-  const waitForImages = async (
-    element: HTMLElement
-  ) => {
-    const images =
-      Array.from(
-        element.querySelectorAll(
-          'img'
-        )
-      );
-
-    await Promise.all(
-      images.map(
-        (img) =>
-          new Promise<void>(
-            (resolve) => {
+            const addIfBackground = (
+              x: number,
+              y: number
+            ) => {
               if (
-                img.complete
+                x < 0 ||
+                x >= width ||
+                y < 0 ||
+                y >= height
               ) {
-                resolve();
                 return;
               }
 
-              const done =
-                () => {
-                  img.removeEventListener(
-                    'load',
-                    done
-                  );
+              const pixel =
+                y * width + x;
 
-                  img.removeEventListener(
-                    'error',
-                    done
-                  );
+              if (
+                visited[pixel]
+              ) {
+                return;
+              }
 
-                  resolve();
-                };
+              const index =
+                pixel * 4;
 
-              img.addEventListener(
-                'load',
-                done
+              if (
+                !isWhiteLike(
+                  index
+                )
+              ) {
+                return;
+              }
+
+              visited[pixel] = 1;
+
+              queue.push(pixel);
+            };
+
+            for (
+              let x = 0;
+              x < width;
+              x++
+            ) {
+              addIfBackground(
+                x,
+                0
               );
 
-              img.addEventListener(
-                'error',
-                done
-              );
-
-              setTimeout(
-                done,
-                10000
+              addIfBackground(
+                x,
+                height - 1
               );
             }
-          )
-      )
+
+            for (
+              let y = 0;
+              y < height;
+              y++
+            ) {
+              addIfBackground(
+                0,
+                y
+              );
+
+              addIfBackground(
+                width - 1,
+                y
+              );
+            }
+
+            let queueIndex = 0;
+
+            while (
+              queueIndex <
+              queue.length
+            ) {
+              const pixel =
+                queue[
+                  queueIndex++
+                ];
+
+              const x =
+                pixel % width;
+
+              const y =
+                Math.floor(
+                  pixel / width
+                );
+
+              addIfBackground(
+                x + 1,
+                y
+              );
+
+              addIfBackground(
+                x - 1,
+                y
+              );
+
+              addIfBackground(
+                x,
+                y + 1
+              );
+
+              addIfBackground(
+                x,
+                y - 1
+              );
+            }
+
+            for (
+              let pixel = 0;
+              pixel <
+              visited.length;
+              pixel++
+            ) {
+              if (
+                visited[pixel]
+              ) {
+                data[
+                  pixel * 4 + 3
+                ] = 0;
+              }
+            }
+
+            ctx.putImageData(
+              imageData,
+              0,
+              0
+            );
+
+            resolve(
+              canvas.toDataURL(
+                'image/png'
+              )
+            );
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        img.onerror = () => {
+          reject(
+            new Error(
+              'ไม่สามารถโหลดรูปภาพเพื่อทำพื้นหลังโปร่งใสได้'
+            )
+          );
+        };
+
+        img.src =
+          dataUrl;
+      }
     );
   };
 
+  /*
+   * ==========================================================
+   * IMAGE UPLOAD
+   * ==========================================================
+   */
+  const handleImageUpload =
+    async (
+      e: React.ChangeEvent<HTMLInputElement>,
+      setPreview: React.Dispatch<
+        React.SetStateAction<
+          string | null
+        >
+      >,
+      removeBackground = false
+    ) => {
+      const file =
+        e.target.files?.[0];
+
+      if (!file) return;
+
+      if (
+        !file.type.startsWith(
+          'image/'
+        )
+      ) {
+        alert(
+          'กรุณาเลือกไฟล์รูปภาพ'
+        );
+
+        return;
+      }
+
+      const reader =
+        new FileReader();
+
+      reader.onloadend =
+        async () => {
+          try {
+            const dataUrl =
+              reader.result as string;
+
+            if (
+              removeBackground
+            ) {
+              const transparentLogo =
+                await removeWhiteBackground(
+                  dataUrl
+                );
+
+              setPreview(
+                transparentLogo
+              );
+            } else {
+              setPreview(
+                dataUrl
+              );
+            }
+          } catch (error) {
+            console.error(
+              'ไม่สามารถทำพื้นหลังโลโก้ให้โปร่งใส:',
+              error
+            );
+
+            setPreview(
+              reader.result as string
+            );
+          }
+        };
+
+      reader.onerror = () => {
+        alert(
+          'ไม่สามารถอ่านไฟล์รูปภาพได้'
+        );
+      };
+
+      reader.readAsDataURL(
+        file
+      );
+
+      e.target.value = '';
+    };
+
+  /*
+   * ==========================================================
+   * WAIT FOR IMAGES
+   * ==========================================================
+   *
+   * เวอร์ชันใหม่จะตรวจ naturalWidth ด้วย
+   * เพื่อไม่ให้ complete=true แต่รูปโหลดเสีย
+   */
+  const waitForImages =
+    async (
+      element: HTMLElement
+    ) => {
+      const images =
+        Array.from(
+          element.querySelectorAll(
+            'img'
+          )
+        );
+
+      await Promise.all(
+        images.map(
+          async (img, index) => {
+            if (
+              img.complete &&
+              img.naturalWidth > 0
+            ) {
+              try {
+                if (
+                  typeof img.decode ===
+                  'function'
+                ) {
+                  await img.decode();
+                }
+              } catch {
+                // decode บาง browser อาจ reject
+                // แต่รูปยังใช้งานได้
+              }
+
+              return;
+            }
+
+            await new Promise<void>(
+              (
+                resolve,
+                reject
+              ) => {
+                let finished =
+                  false;
+
+                const cleanup =
+                  () => {
+                    img.removeEventListener(
+                      'load',
+                      handleLoad
+                    );
+
+                    img.removeEventListener(
+                      'error',
+                      handleError
+                    );
+                  };
+
+                const handleLoad =
+                  async () => {
+                    if (
+                      finished
+                    )
+                      return;
+
+                    finished = true;
+
+                    cleanup();
+
+                    try {
+                      if (
+                        typeof img.decode ===
+                        'function'
+                      ) {
+                        await img.decode();
+                      }
+                    } catch {
+                      // ignore decode error
+                    }
+
+                    resolve();
+                  };
+
+                const handleError =
+                  () => {
+                    if (
+                      finished
+                    )
+                      return;
+
+                    finished = true;
+
+                    cleanup();
+
+                    reject(
+                      new Error(
+                        `ไม่สามารถโหลดรูปภาพหมายเลข ${
+                          index + 1
+                        } ได้`
+                      )
+                    );
+                  };
+
+                img.addEventListener(
+                  'load',
+                  handleLoad
+                );
+
+                img.addEventListener(
+                  'error',
+                  handleError
+                );
+
+                setTimeout(
+                  () => {
+                    if (
+                      finished
+                    )
+                      return;
+
+                    finished = true;
+
+                    cleanup();
+
+                    if (
+                      img.naturalWidth >
+                      0
+                    ) {
+                      resolve();
+                    } else {
+                      reject(
+                        new Error(
+                          `รูปภาพหมายเลข ${
+                            index + 1
+                          } โหลดไม่สำเร็จหรือใช้เวลานานเกินไป`
+                        )
+                      );
+                    }
+                  },
+                  15000
+                );
+              }
+            );
+          }
+        )
+      );
+    };
+
+  /*
+   * ==========================================================
+   * WAIT FOR FONTS
+   * ==========================================================
+   */
   const waitForFonts =
     async () => {
       if (
@@ -534,6 +954,11 @@ export default function MiniAppForm() {
       }
     };
 
+  /*
+   * ==========================================================
+   * GENERATE PREVIEW
+   * ==========================================================
+   */
   const handlePreviewClick =
     async () => {
       if (
@@ -543,6 +968,7 @@ export default function MiniAppForm() {
         alert(
           'กรุณาใส่ชื่อแอปก่อน'
         );
+
         return;
       }
 
@@ -550,6 +976,7 @@ export default function MiniAppForm() {
         alert(
           'กรุณาอัปโหลดโลโก้หน่วยงานก่อน'
         );
+
         return;
       }
 
@@ -608,10 +1035,39 @@ export default function MiniAppForm() {
           );
         }
 
+        /*
+         * ======================================================
+         * IMPORTANT
+         * ======================================================
+         *
+         * แปลงภาพ AI เป็น Data URL ตั้งแต่ตรงนี้
+         * เพื่อป้องกัน html-to-image เจอ CORS/Event
+         */
+        let safeAppLogo: string;
+
+        try {
+          safeAppLogo =
+            await imageToDataUrl(
+              data.result
+            );
+        } catch (imageError) {
+          console.error(
+            'AI image conversion error:',
+            imageError
+          );
+
+          throw new Error(
+            'สร้างภาพ AI สำเร็จ แต่ไม่สามารถเตรียมภาพสำหรับ Screenshot ได้'
+          );
+        }
+
         setAppLogo(
-          data.result
+          safeAppLogo
         );
 
+        /*
+         * ตรวจสอบภาพก่อนแสดง Preview
+         */
         await new Promise<void>(
           (
             resolve,
@@ -621,7 +1077,33 @@ export default function MiniAppForm() {
               new Image();
 
             img.onload =
-              () => resolve();
+              async () => {
+                try {
+                  if (
+                    typeof img.decode ===
+                    'function'
+                  ) {
+                    await img.decode();
+                  }
+                } catch {
+                  // ignore
+                }
+
+                if (
+                  img.naturalWidth <=
+                  0
+                ) {
+                  reject(
+                    new Error(
+                      'ภาพ AI ไม่มีข้อมูลรูปภาพที่ถูกต้อง'
+                    )
+                  );
+
+                  return;
+                }
+
+                resolve();
+              };
 
             img.onerror =
               () =>
@@ -632,11 +1114,25 @@ export default function MiniAppForm() {
                 );
 
             img.src =
-              data.result as string;
+              safeAppLogo;
           }
         );
 
         await waitForFonts();
+
+        /*
+         * ให้ React render appLogo ใหม่ก่อน
+         * แล้วค่อยเปิด Preview
+         */
+        await new Promise<void>(
+          (resolve) =>
+            requestAnimationFrame(
+              () =>
+                requestAnimationFrame(
+                  () => resolve()
+                )
+            )
+        );
 
         setShowPreview(
           true
@@ -675,6 +1171,11 @@ export default function MiniAppForm() {
       }
     };
 
+  /*
+   * ==========================================================
+   * CREATE PNG
+   * ==========================================================
+   */
   const createImageWithCanvas =
     async (
       element: HTMLElement
@@ -687,22 +1188,120 @@ export default function MiniAppForm() {
       const renderRatio =
         isMobile ? 1.5 : 3;
 
+      /*
+       * รอรูป + font
+       */
       await waitForImages(
         element
       );
 
       await waitForFonts();
 
+      /*
+       * ตรวจรูปทุกตัวอีกครั้ง
+       */
+      const images =
+        Array.from(
+          element.querySelectorAll(
+            'img'
+          )
+        );
+
+      for (
+        const img of images
+      ) {
+        if (
+          !img.complete ||
+          img.naturalWidth <= 0
+        ) {
+          throw new Error(
+            'มีรูปภาพที่ยังโหลดไม่สมบูรณ์ กรุณาลองดาวน์โหลดอีกครั้ง'
+          );
+        }
+
+        /*
+         * ถ้าเป็น external URL
+         * พยายามเปลี่ยนเป็น Data URL
+         *
+         * โดยเฉพาะภาพ AI
+         */
+        const src =
+          img.getAttribute(
+            'src'
+          );
+
+        if (
+          src &&
+          !src.startsWith(
+            'data:image/'
+          ) &&
+          !src.startsWith(
+            'blob:'
+          ) &&
+          !src.startsWith('/')
+        ) {
+          try {
+            const safeSrc =
+              await imageToDataUrl(
+                src
+              );
+
+            img.setAttribute(
+              'src',
+              safeSrc
+            );
+
+            await new Promise<void>(
+              (
+                resolve,
+                reject
+              ) => {
+                const testImg =
+                  new Image();
+
+                testImg.onload =
+                  () =>
+                    resolve();
+
+                testImg.onerror =
+                  () =>
+                    reject(
+                      new Error(
+                        'ไม่สามารถโหลดรูปภาพสำหรับสร้าง PNG ได้'
+                      )
+                    );
+
+                testImg.src =
+                  safeSrc;
+              }
+            );
+          } catch (error) {
+            console.warn(
+              'ไม่สามารถแปลงรูปภาพ external:',
+              error
+            );
+
+            throw new Error(
+              'พบรูปภาพภายนอกที่ไม่สามารถนำมาสร้าง Screenshot ได้'
+            );
+          }
+        }
+      }
+
       await new Promise<void>(
         (resolve) =>
           requestAnimationFrame(
             () =>
               requestAnimationFrame(
-                () => resolve()
+                () =>
+                  resolve()
               )
           )
       );
 
+      /*
+       * สร้าง PNG
+       */
       return await toPng(
         element,
         {
@@ -734,6 +1333,11 @@ export default function MiniAppForm() {
       );
     };
 
+  /*
+   * ==========================================================
+   * DATA URL -> BLOB
+   * ==========================================================
+   */
   const dataUrlToBlob =
     async (
       dataUrl: string
@@ -752,6 +1356,11 @@ export default function MiniAppForm() {
       return await response.blob();
     };
 
+  /*
+   * ==========================================================
+   * MOBILE DOWNLOAD
+   * ==========================================================
+   */
   const downloadOnMobile =
     async (
       blob: Blob,
@@ -766,6 +1375,9 @@ export default function MiniAppForm() {
           }
         );
 
+      /*
+       * IOS / ANDROID SHARE
+       */
       if (
         typeof navigator !==
           'undefined' &&
@@ -804,7 +1416,8 @@ export default function MiniAppForm() {
           }
         } catch (error) {
           if (
-            error instanceof DOMException &&
+            error instanceof
+              DOMException &&
             error.name ===
               'AbortError'
           ) {
@@ -818,6 +1431,9 @@ export default function MiniAppForm() {
         }
       }
 
+      /*
+       * FALLBACK
+       */
       const blobUrl =
         URL.createObjectURL(
           blob
@@ -941,6 +1557,9 @@ export default function MiniAppForm() {
         return;
       }
 
+      /*
+       * Popup blocked
+       */
       window.location.href =
         blobUrl;
 
@@ -951,6 +1570,11 @@ export default function MiniAppForm() {
       }, 60000);
     };
 
+  /*
+   * ==========================================================
+   * DOWNLOAD SCREEN
+   * ==========================================================
+   */
   const downloadScreen =
     async (
       ref: React.RefObject<
@@ -966,6 +1590,7 @@ export default function MiniAppForm() {
         alert(
           'ไม่พบพื้นที่สำหรับสร้างรูป'
         );
+
         return;
       }
 
@@ -980,6 +1605,16 @@ export default function MiniAppForm() {
       try {
         setIsDownloading(
           true
+        );
+
+        /*
+         * รอ React / browser
+         */
+        await new Promise<void>(
+          (resolve) =>
+            requestAnimationFrame(
+              () => resolve()
+            )
         );
 
         await waitForImages(
@@ -1018,6 +1653,9 @@ export default function MiniAppForm() {
           );
         }
 
+        /*
+         * MOBILE
+         */
         if (isMobile) {
           await downloadOnMobile(
             blob,
@@ -1027,6 +1665,9 @@ export default function MiniAppForm() {
           return;
         }
 
+        /*
+         * DESKTOP
+         */
         const blobUrl =
           URL.createObjectURL(
             blob
@@ -1091,6 +1732,20 @@ export default function MiniAppForm() {
         ) {
           errorMessage =
             err;
+        } else if (
+          err &&
+          typeof err ===
+            'object' &&
+          'message' in err
+        ) {
+          errorMessage =
+            String(
+              (
+                err as {
+                  message?: unknown;
+                }
+              ).message
+            );
         }
 
         alert(
@@ -1103,6 +1758,11 @@ export default function MiniAppForm() {
       }
     };
 
+  /*
+   * ==========================================================
+   * PREVIEW
+   * ==========================================================
+   */
   if (showPreview) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 sm:p-8 font-sans text-gray-700 flex flex-col items-center overflow-x-auto">
@@ -1454,7 +2114,6 @@ export default function MiniAppForm() {
 
           {/* =====================================================
               SCREEN 3
-              WHITE CONTENT FRAME + BLUE LEFT TAB
           ===================================================== */}
 
           <div className="flex flex-col items-center">
@@ -1468,11 +2127,9 @@ export default function MiniAppForm() {
                 fontFamily:
                   'Anuphan, sans-serif',
                 backgroundColor:
-                  '#e5f0f9',
+                  '#111827',
               }}
             >
-
-              {/* Background */}
 
               {appLogo ? (
                 <img
@@ -1490,21 +2147,15 @@ export default function MiniAppForm() {
                 />
               )}
 
-              {/* Dark overlay */}
-
               <div
                 className="absolute inset-0 z-10"
                 style={{
                   background:
-                    'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.35) 100%)',
+                    'linear-gradient(to bottom, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.18) 38%, rgba(0,0,0,0.48) 100%)',
                 }}
               />
 
-              {/* =================================================
-                  SCREEN 3 HEADER
-              ================================================= */}
-
-              <div className="absolute top-[30px] left-[20px] right-[20px] z-40 flex justify-center">
+              <div className="absolute top-[35px] left-[25px] right-[25px] z-40 flex justify-center">
 
                 <h1
                   className="font-bold text-[23px] leading-tight whitespace-nowrap"
@@ -1522,246 +2173,154 @@ export default function MiniAppForm() {
 
               </div>
 
-              {/* =================================================
-                  WHITE CONTENT FRAME
-              ================================================= */}
-
               <div
-                className="absolute top-[92px] left-[24px] right-[24px] bottom-[102px] z-30"
-                style={{
-                  backgroundColor:
-                    '#ffffff',
-                  borderRadius:
-                    '18px',
-                  boxShadow:
-                    '0 8px 25px rgba(0,0,0,0.22)',
-                }}
+                className="absolute top-[120px] left-[28px] right-[28px] bottom-[100px] z-20 overflow-hidden"
               >
 
-                {/* BLUE LEFT PROTRUDING TAB */}
+                <div className="mb-3">
 
-                <div
-                  className="absolute left-[-10px] top-[28px]"
-                  style={{
-                    width: '18px',
-                    height: '92px',
-                    backgroundColor:
-                      themeColor,
-                    borderRadius:
-                      '7px 0 0 7px',
-                    boxShadow:
-                      '0 3px 8px rgba(0,0,0,0.18)',
-                  }}
-                />
+                  <h2
+                    className="font-bold text-[24px] leading-tight"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 3px 8px rgba(0,0,0,0.95)',
+                    }}
+                  >
+                    {headerService ||
+                      'บริการจำหน่ายอุปกรณ์ตกปลา'}
+                  </h2>
 
-                {/* Blue small end cap */}
+                </div>
 
-                <div
-                  className="absolute left-[-14px] top-[28px]"
-                  style={{
-                    width: '8px',
-                    height: '92px',
-                    backgroundColor:
-                      themeColor,
-                    borderRadius:
-                      '7px 0 0 7px',
-                  }}
-                />
+                <div className="mb-3">
 
-                {/* CONTENT */}
+                  <p
+                    className="font-semibold text-[17px] leading-[1.45]"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 6px rgba(0,0,0,0.85)',
+                    }}
+                  >
+                    เลือกซื้อสินค้าได้ง่าย
+                    <br />
+                    สะดวก ครบ จบในที่เดียว
+                  </p>
 
-                <div
-                  className="absolute inset-0 overflow-hidden"
-                  style={{
-                    padding:
-                      '24px 22px 20px 28px',
-                    borderRadius:
-                      '18px',
-                  }}
-                >
+                </div>
 
-                  <div className="h-full overflow-hidden">
+                <div className="mb-2">
 
-                    {/* Header Service */}
+                  <h3
+                    className="font-bold text-[21px] leading-[1.25]"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 7px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    บริการที่สามารถทำได้บน
+                    <br />
+                    แพลตฟอร์ม
+                  </h3>
 
-                    <div className="mb-4">
+                </div>
 
-                      <h2
-                        className="font-bold text-[24px] leading-tight"
-                        style={{
-                          color:
-                            '#111827',
-                          fontFamily:
-                            'Anuphan, sans-serif',
-                        }}
-                      >
-                        {headerService ||
-                          'บริการจำหน่ายอุปกรณ์ตกปลา'}
-                      </h2>
+                <div className="mb-3">
 
-                    </div>
+                  <p
+                    className="text-[15px] leading-[1.5]"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 7px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    {detail1 ||
+                      'เลือกซื้ออุปกรณ์ตกปลาและสินค้าที่เกี่ยวข้องได้ง่าย ครบ จบในร้านเดียว สามารถค้นหาสินค้า เลือกดูคันเบ็ด รอก เหยื่อ และอุปกรณ์ตกปลาได้อย่างสะดวก พร้อมรายละเอียดสินค้าและข้อมูลที่ช่วยให้ตัดสินใจเลือกซื้อออนไลน์ได้ง่ายดาย'}
+                  </p>
 
-                    {/* Short Description */}
+                </div>
 
-                    <div className="mb-4">
+                <div className="mb-3 pb-2">
 
-                      <p
-                        className="font-semibold text-[16px] leading-[1.5]"
-                        style={{
-                          color:
-                            '#374151',
-                          fontFamily:
-                            'Anuphan, sans-serif',
-                        }}
-                      >
-                        เลือกซื้อสินค้าได้ง่าย
-                        <br />
-                        สะดวก ครบ จบในที่เดียว
-                      </p>
+                  <h4
+                    className="font-bold text-[17px] mb-1"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 6px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    เลือกซื้อสินค้า
+                  </h4>
 
-                    </div>
+                  <p
+                    className="text-[13px] leading-[1.4]"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 5px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    ค้นหาอุปกรณ์ที่ต้องการได้ง่าย
+                  </p>
 
-                    {/* Platform Heading */}
+                </div>
 
-                    <div className="mb-2">
+                <div className="pb-2">
 
-                      <h3
-                        className="font-bold text-[20px] leading-[1.3]"
-                        style={{
-                          color:
-                            '#111827',
-                          fontFamily:
-                            'Anuphan, sans-serif',
-                        }}
-                      >
-                        บริการที่สามารถทำได้บน
-                        <br />
-                        แพลตฟอร์ม
-                      </h3>
+                  <h4
+                    className="font-bold text-[17px] mb-1"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 6px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    ดูรายละเอียดสินค้า
+                  </h4>
 
-                    </div>
-
-                    {/* Detail */}
-
-                    <div className="mb-4">
-
-                      <p
-                        className="text-[14px] leading-[1.55]"
-                        style={{
-                          color:
-                            '#4b5563',
-                          fontFamily:
-                            'Anuphan, sans-serif',
-                        }}
-                      >
-                        {detail1 ||
-                          'เลือกซื้ออุปกรณ์ตกปลาและสินค้าที่เกี่ยวข้องได้ง่าย ครบ จบในร้านเดียว สามารถค้นหาสินค้า เลือกดูคันเบ็ด รอก เหยื่อ และอุปกรณ์ตกปลาได้อย่างสะดวก พร้อมรายละเอียดสินค้าและข้อมูลที่ช่วยให้ตัดสินใจเลือกซื้อออนไลน์ได้ง่ายดาย'}
-                      </p>
-
-                    </div>
-
-                    {/* Service Item 1 */}
-
-                    <div className="mb-3">
-
-                      <div className="flex items-start gap-2">
-
-                        <div
-                          className="mt-[6px] w-[7px] h-[7px] rounded-full flex-shrink-0"
-                          style={{
-                            backgroundColor:
-                              themeColor,
-                          }}
-                        />
-
-                        <div>
-
-                          <h4
-                            className="font-bold text-[16px] leading-tight mb-1"
-                            style={{
-                              color:
-                                '#111827',
-                              fontFamily:
-                                'Anuphan, sans-serif',
-                            }}
-                          >
-                            เลือกซื้อสินค้า
-                          </h4>
-
-                          <p
-                            className="text-[13px] leading-[1.45]"
-                            style={{
-                              color:
-                                '#6b7280',
-                              fontFamily:
-                                'Anuphan, sans-serif',
-                            }}
-                          >
-                            ค้นหาอุปกรณ์ที่ต้องการได้ง่าย
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                    {/* Service Item 2 */}
-
-                    <div className="mb-3">
-
-                      <div className="flex items-start gap-2">
-
-                        <div
-                          className="mt-[6px] w-[7px] h-[7px] rounded-full flex-shrink-0"
-                          style={{
-                            backgroundColor:
-                              themeColor,
-                          }}
-                        />
-
-                        <div>
-
-                          <h4
-                            className="font-bold text-[16px] leading-tight mb-1"
-                            style={{
-                              color:
-                                '#111827',
-                              fontFamily:
-                                'Anuphan, sans-serif',
-                            }}
-                          >
-                            ดูรายละเอียดสินค้า
-                          </h4>
-
-                          <p
-                            className="text-[13px] leading-[1.45]"
-                            style={{
-                              color:
-                                '#6b7280',
-                              fontFamily:
-                                'Anuphan, sans-serif',
-                            }}
-                          >
-                            ตรวจสอบข้อมูลสินค้า
-                            ก่อนสั่งซื้อ
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  </div>
+                  <p
+                    className="text-[13px] leading-[1.4]"
+                    style={{
+                      color:
+                        '#ffffff',
+                      fontFamily:
+                        'Anuphan, sans-serif',
+                      textShadow:
+                        '0 2px 5px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    ตรวจสอบข้อมูลสินค้า
+                    ก่อนสั่งซื้อ
+                  </p>
 
                 </div>
 
               </div>
-
-              {/* =================================================
-                  FOOTER
-              ================================================= */}
 
               <div
                 className="absolute bottom-0 left-0 right-0 z-50"
@@ -1775,8 +2334,6 @@ export default function MiniAppForm() {
                 <div className="absolute inset-0 flex items-center justify-center px-4">
 
                   <div className="w-full flex items-center justify-around">
-
-                    {/* Partner Logo */}
 
                     <div className="w-[72px] h-[58px] flex items-center justify-center">
 
@@ -1799,8 +2356,6 @@ export default function MiniAppForm() {
                       )}
 
                     </div>
-
-                    {/* DGA */}
 
                     <div className="w-[78px] flex flex-col items-center justify-center">
 
@@ -1829,8 +2384,6 @@ export default function MiniAppForm() {
                       </div>
 
                     </div>
-
-                    {/* ทางรัฐ */}
 
                     <div className="w-[78px] h-[58px] flex items-center justify-center">
 
@@ -1873,9 +2426,16 @@ export default function MiniAppForm() {
           </div>
 
         </div>
+
       </div>
     );
   }
+
+  /*
+   * ==========================================================
+   * FORM PAGE
+   * ==========================================================
+   */
 
   return (
     <div
@@ -1903,10 +2463,6 @@ export default function MiniAppForm() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
 
         <div className="mb-8">
 
@@ -1947,10 +2503,12 @@ export default function MiniAppForm() {
               </h1>
 
               <p className="mt-4 text-sm sm:text-base text-gray-500 leading-relaxed max-w-2xl">
+
                 กรอกข้อมูลเพียงไม่กี่ขั้นตอน
                 ระบบจะสร้างภาพตัวอย่าง MiniApp
                 พร้อมภาพประกอบ AI
                 ให้พร้อมใช้งานและดาวน์โหลด
+
               </p>
 
             </div>
@@ -1958,10 +2516,6 @@ export default function MiniAppForm() {
           </div>
 
         </div>
-
-        {/* =====================================================
-            STEP BAR
-        ===================================================== */}
 
         <div className="bg-white/85 backdrop-blur-xl border border-white rounded-2xl shadow-sm p-3 sm:p-4 mb-7">
 
@@ -2041,9 +2595,7 @@ export default function MiniAppForm() {
 
           <div className="space-y-6">
 
-            {/* =================================================
-                THEME COLOR
-            ================================================= */}
+            {/* THEME COLOR */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2136,9 +2688,7 @@ export default function MiniAppForm() {
 
             </div>
 
-            {/* =================================================
-                MINIAPP INFO
-            ================================================= */}
+            {/* MINIAPP INFO */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2213,7 +2763,6 @@ export default function MiniAppForm() {
 
                       {orgLogo ? (
                         <>
-
                           <img
                             src={orgLogo}
                             className="w-full h-full object-contain"
@@ -2227,11 +2776,9 @@ export default function MiniAppForm() {
                             </span>
 
                           </div>
-
                         </>
                       ) : (
                         <>
-
                           <div
                             className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xl shadow-sm"
                             style={{
@@ -2245,7 +2792,6 @@ export default function MiniAppForm() {
                           <span className="text-xs font-semibold text-gray-500 mt-2">
                             อัปโหลดโลโก้
                           </span>
-
                         </>
                       )}
 
@@ -2325,9 +2871,7 @@ export default function MiniAppForm() {
 
             </div>
 
-            {/* =================================================
-                SCREENSHOT
-            ================================================= */}
+            {/* SCREENSHOT */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2381,7 +2925,6 @@ export default function MiniAppForm() {
 
                     {screenshot ? (
                       <>
-
                         <img
                           src={screenshot}
                           className="w-full h-full object-cover"
@@ -2395,11 +2938,9 @@ export default function MiniAppForm() {
                           </span>
 
                         </div>
-
                       </>
                     ) : (
                       <>
-
                         <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl text-blue-500">
                           ↑
                         </div>
@@ -2411,7 +2952,6 @@ export default function MiniAppForm() {
                         <span className="text-xs text-gray-400 mt-1">
                           แนวตั้ง 1080 × 1920
                         </span>
-
                       </>
                     )}
 
@@ -2485,9 +3025,7 @@ export default function MiniAppForm() {
 
             </div>
 
-            {/* =================================================
-                SERVICE DETAILS
-            ================================================= */}
+            {/* SERVICE DETAILS */}
 
             <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
 
@@ -2588,8 +3126,6 @@ export default function MiniAppForm() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-                  {/* Footer Logo */}
-
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
 
                     <label className="block text-xs font-semibold text-gray-500 mb-3">
@@ -2619,7 +3155,6 @@ export default function MiniAppForm() {
 
                       {footerLogo ? (
                         <>
-
                           <img
                             src={footerLogo}
                             className="w-full h-full object-contain"
@@ -2633,11 +3168,9 @@ export default function MiniAppForm() {
                             </span>
 
                           </div>
-
                         </>
                       ) : (
                         <>
-
                           <span className="text-2xl">
                             +
                           </span>
@@ -2645,7 +3178,6 @@ export default function MiniAppForm() {
                           <span className="text-xs font-semibold text-gray-500 mt-1">
                             อัปโหลด
                           </span>
-
                         </>
                       )}
 
@@ -2656,8 +3188,6 @@ export default function MiniAppForm() {
                     </p>
 
                   </div>
-
-                  {/* QR Code */}
 
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
 
@@ -2681,7 +3211,6 @@ export default function MiniAppForm() {
 
                       {qrCode ? (
                         <>
-
                           <img
                             src={qrCode}
                             className="w-full h-full object-cover"
@@ -2695,11 +3224,9 @@ export default function MiniAppForm() {
                             </span>
 
                           </div>
-
                         </>
                       ) : (
                         <>
-
                           <span className="text-2xl">
                             +
                           </span>
@@ -2707,7 +3234,6 @@ export default function MiniAppForm() {
                           <span className="text-xs font-semibold text-gray-500 mt-1">
                             QR Code
                           </span>
-
                         </>
                       )}
 
@@ -2723,9 +3249,7 @@ export default function MiniAppForm() {
 
           </div>
 
-          {/* =====================================================
-              SUMMARY
-          ===================================================== */}
+          {/* SUMMARY */}
 
           <div className="lg:sticky lg:top-6 space-y-5">
 
@@ -2907,9 +3431,7 @@ export default function MiniAppForm() {
 
         </div>
 
-        {/* =====================================================
-            CREATE BUTTON
-        ===================================================== */}
+        {/* CREATE BUTTON */}
 
         <div className="mt-8 pb-8">
 
@@ -2962,7 +3484,6 @@ export default function MiniAppForm() {
 
                 {isGenerating ? (
                   <>
-
                     <span className="animate-spin">
                       ◌
                     </span>
@@ -2970,11 +3491,9 @@ export default function MiniAppForm() {
                     <span>
                       กำลังสร้างภาพ...
                     </span>
-
                   </>
                 ) : (
                   <>
-
                     <span>
                       สร้าง Screenshot
                     </span>
@@ -2982,7 +3501,6 @@ export default function MiniAppForm() {
                     <span>
                       ✨
                     </span>
-
                   </>
                 )}
 
