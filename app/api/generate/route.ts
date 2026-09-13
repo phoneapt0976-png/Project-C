@@ -1,826 +1,987 @@
-/* =========================================================
-   SVG FALLBACK
-   ========================================================= */
+import { NextResponse } from 'next/server';
 
-const escapeXml = (value: string) => {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-};
+/**
+ * ============================================================
+ * DEAPI MINI APP ARTWORK GENERATOR
+ * ============================================================
+ */
 
-const buildSvgArtwork = (
-  title: string,
-  subtitle: string,
-  orgLogo?: string
-) => {
-  const safeTitle =
-    escapeXml(title || 'Mini App');
+const DEAPI_API_URL = 'https://api.deapi.ai';
 
-  const safeSubtitle =
-    escapeXml(subtitle || 'Digital Service');
+const DEAPI_IMAGE_EDIT_ENDPOINT =
+  `${DEAPI_API_URL}/api/v2/images/edits`;
 
-  const logo =
-    orgLogo || '';
-
-  const logoImage = logo
-    ? `
-      <image
-        href="${logo}"
-        x="205"
-        y="205"
-        width="210"
-        height="210"
-        preserveAspectRatio="xMidYMid meet"
-      />
-    `
-    : `
-      <rect
-        x="210"
-        y="210"
-        width="200"
-        height="200"
-        rx="42"
-        fill="#0c47a1"
-      />
-
-      <path
-        d="M252 368 L340 252 L360 252 L360 350 L332 350 L332 286 L301 328 L288 328 L269 305 L269 350 L252 350 Z"
-        fill="#ffffff"
-      />
-
-      <circle
-        cx="346"
-        cy="288"
-        r="17"
-        fill="#63b3ff"
-      />
-    `;
-
-  const svg = `
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="1200"
-      height="1200"
-      viewBox="0 0 1200 1200"
-    >
-
-      <defs>
-
-        <linearGradient
-          id="bg"
-          x1="0"
-          x2="1"
-          y1="0"
-          y2="1"
-        >
-          <stop
-            offset="0%"
-            stop-color="#eaf4ff"
-          />
-
-          <stop
-            offset="100%"
-            stop-color="#dfeeff"
-          />
-        </linearGradient>
-
-        <linearGradient
-          id="card"
-          x1="0"
-          x2="1"
-          y1="0"
-          y2="1"
-        >
-          <stop
-            offset="0%"
-            stop-color="#ffffff"
-            stop-opacity="0.96"
-          />
-
-          <stop
-            offset="100%"
-            stop-color="#ecf4ff"
-            stop-opacity="0.9"
-          />
-        </linearGradient>
-
-      </defs>
-
-
-      <!-- Background -->
-
-      <rect
-        width="1200"
-        height="1200"
-        fill="url(#bg)"
-      />
-
-
-      <!-- Decorative circles -->
-
-      <circle
-        cx="980"
-        cy="170"
-        r="150"
-        fill="#cfe3ff"
-        opacity="0.75"
-      />
-
-      <circle
-        cx="250"
-        cy="920"
-        r="180"
-        fill="#cfe3ff"
-        opacity="0.65"
-      />
-
-      <circle
-        cx="1010"
-        cy="980"
-        r="120"
-        fill="#b7d7ff"
-        opacity="0.75"
-      />
-
-
-      <!-- Main card -->
-
-      <rect
-        x="120"
-        y="120"
-        width="960"
-        height="960"
-        rx="60"
-        fill="url(#card)"
-      />
-
-
-      <!-- Logo area -->
-
-      <rect
-        x="180"
-        y="180"
-        width="250"
-        height="250"
-        rx="42"
-        fill="#0c47a1"
-        opacity="0.08"
-      />
-
-      ${logoImage}
-
-
-      <!-- Application name -->
-
-      <g transform="translate(520,220)">
-
-        <text
-          x="0"
-          y="110"
-          font-family="Arial, Helvetica, sans-serif"
-          font-size="64"
-          font-weight="700"
-          fill="#0c47a1"
-        >
-          ${safeTitle}
-        </text>
-
-        <text
-          x="0"
-          y="185"
-          font-family="Arial, Helvetica, sans-serif"
-          font-size="32"
-          font-weight="600"
-          fill="#3d5f8a"
-          letter-spacing="2"
-        >
-          ${safeSubtitle}
-        </text>
-
-      </g>
-
-
-      <!-- Illustration preview card -->
-
-      <g transform="translate(180,510)">
-
-        <rect
-          x="0"
-          y="0"
-          width="840"
-          height="430"
-          rx="42"
-          fill="#ffffff"
-          opacity="0.92"
-        />
-
-
-        <!-- Illustration placeholder -->
-
-        <rect
-          x="52"
-          y="52"
-          width="220"
-          height="220"
-          rx="24"
-          fill="#edf5ff"
-        />
-
-
-        <!-- Content lines -->
-
-        <rect
-          x="330"
-          y="72"
-          width="430"
-          height="32"
-          rx="16"
-          fill="#dfeeff"
-        />
-
-        <rect
-          x="330"
-          y="140"
-          width="350"
-          height="28"
-          rx="14"
-          fill="#eaf3ff"
-        />
-
-        <rect
-          x="330"
-          y="190"
-          width="420"
-          height="28"
-          rx="14"
-          fill="#eaf3ff"
-        />
-
-
-        <!-- Small logo -->
-
-        ${
-          logo
-            ? `
-              <image
-                href="${logo}"
-                x="92"
-                y="92"
-                width="140"
-                height="140"
-                preserveAspectRatio="xMidYMid meet"
-              />
-            `
-            : `
-              <rect
-                x="95"
-                y="105"
-                width="120"
-                height="120"
-                rx="22"
-                fill="#0c47a1"
-              />
-
-              <path
-                d="M125 195 L177 137 L191 137 L191 177 L169 177 L169 159 L150 179 L140 179 L129 168 L129 195 Z"
-                fill="#ffffff"
-              />
-            `
-        }
-
-
-        <!-- Button -->
-
-        <g transform="translate(540,280)">
-
-          <rect
-            x="0"
-            y="0"
-            width="166"
-            height="58"
-            rx="29"
-            fill="#0c47a1"
-          />
-
-          <text
-            x="83"
-            y="38"
-            text-anchor="middle"
-            font-family="Arial, Helvetica, sans-serif"
-            font-size="26"
-            font-weight="700"
-            fill="#ffffff"
-          >
-            บริการ
-          </text>
-
-        </g>
-
-      </g>
-
-    </svg>
-  `;
-
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-};
-
-
-/* =========================================================
-   FLUX / DEAPI CONFIG
-   ========================================================= */
+const DEAPI_JOB_ENDPOINT =
+  `${DEAPI_API_URL}/api/v2/jobs`;
 
 const DEAPI_MODEL =
   process.env.DEAPI_IMAGE_MODEL ||
   'Flux_2_Klein_4B_BF16';
 
-const DEAPI_EDIT_URL =
-  'https://api.deapi.ai/api/v2/images/edits';
+/**
+ * ============================================================
+ * Retry Settings
+ * ============================================================
+ *
+ * Retry เฉพาะ HTTP 429
+ *
+ * 1st retry  -> 3 sec
+ * 2nd retry  -> 7 sec
+ * 3rd retry  -> 15 sec
+ */
 
+const DEAPI_RETRY_DELAYS = [
+  3000,
+  7000,
+  15000,
+];
 
-/* =========================================================
-   PROMPT
-   ========================================================= */
+/**
+ * ============================================================
+ * Build Image Prompt
+ * ============================================================
+ */
 
-const buildPrompt = (
+const buildImagePrompt = (
   appNameTH: string,
   appNameEN: string
 ) => {
-  const name =
-    appNameTH ||
-    appNameEN ||
-    'Mini App';
-
-  const englishName =
-    appNameEN ||
-    name;
-
   return `
-Transform the provided organization logo into a
-premium minimal sticker-style illustration.
+You are an expert visual concept director,
+branding analyst, environment designer,
+commercial photographer, and AI image prompt specialist.
 
-The uploaded image is the ORIGINAL ORGANIZATION LOGO.
-Use it as the main visual reference.
+You are given information about a mobile application.
 
-Application name:
-"${name}"
+============================================================
+APPLICATION INFORMATION
+============================================================
 
-English application name:
-"${englishName}"
+THAI APPLICATION NAME:
+${appNameTH || '(not provided)'}
+
+ENGLISH APPLICATION NAME:
+${appNameEN || '(not provided)'}
+
+You are ALSO given an organization logo as a visual reference image.
+
+============================================================
+YOUR TASK
+============================================================
+
+First, intelligently understand the meaning of the application.
+
+Use BOTH:
+
+1. The application name
+2. The organization logo
+
+to infer the most likely:
+
+- organization identity
+- organization type
+- industry
+- service domain
+- public-service domain
+- business domain
+- real-world activity
+- environment
+- architecture
+- objects
+- surroundings
+- atmosphere
+- visual tone
+
+Then create ONE environmental artwork that visually represents
+what this application actually does or what service it provides.
+
+The generated image should communicate the purpose of the application
+WITHOUT using any text.
 
 IMPORTANT:
 
-- preserve the recognizable identity of the original logo
-- keep the main symbol and visual concept recognizable
-- use the uploaded logo as the primary subject
-- transform the logo into a clean modern sticker illustration
-- minimal but visually attractive
-- professional corporate style
-- suitable for a Thai government or professional MiniApp
-- clean vector-like appearance
-- smooth shapes
-- subtle dimensional depth
-- soft highlights
-- clean edges
-- polished commercial illustration
-- balanced composition
-- centered main subject
-- simple background
-- light and clean color palette
-- premium presentation quality
-- suitable for mobile application artwork
-- suitable for a professional presentation
+Do NOT simply create a generic attractive background.
 
-The application name should influence the visual
-concept when appropriate.
+The environment must have a meaningful relationship
+with the application.
 
-If the organization name describes a place,
-service, product, educational subject, hospital,
-government organization, shop, or other specific
-subject, subtly incorporate that concept into the
-illustration while keeping the original logo
-recognizable.
+The scene should make sense if a person sees the image
+without seeing the application name.
+
+============================================================
+CONTEXT REASONING
+============================================================
+
+Do NOT use fixed keyword mapping.
+
+Do NOT follow rules such as:
+
+"hospital = hospital building"
+
+"restaurant = restaurant"
+
+"school = classroom"
+
+"government = government office"
+
+Instead, understand the complete context.
+
+The same word can represent different types of applications.
+
+Consider the relationship between:
+
+- organization
+- service
+- users
+- real-world location
+- real-world activity
+- surrounding environment
+
+Choose the scene that is most semantically appropriate.
+
+The organization logo is an important visual clue,
+but it is NOT an object that should appear in the final image.
+
+============================================================
+REAL-WORLD REPRESENTATION
+============================================================
+
+The artwork should look like a believable real-world environment
+associated with the application.
+
+Examples of possible visual elements include:
+
+- buildings
+- facilities
+- streets
+- public spaces
+- service counters
+- educational environments
+- healthcare environments
+- transportation environments
+- parks
+- nature
+- infrastructure
+- industrial environments
+- offices
+- commercial environments
+- community environments
+- people performing relevant activities
+- relevant objects
+
+However:
+
+ONLY include elements that genuinely make sense
+for the inferred application.
+
+Do NOT randomly add:
+
+- cars
+- motorcycles
+- roads
+- mountains
+- parks
+- towers
+- offices
+- garages
+- city skylines
+
+unless they are actually relevant.
+
+============================================================
+LOGO RESTRICTION
+============================================================
+
+The uploaded organization logo is ONLY a visual reference.
+
+The logo is provided so you can understand
+the organization's identity and visual character.
+
+DO NOT reproduce the logo.
+
+DO NOT redraw the logo.
+
+DO NOT recreate the logo.
+
+DO NOT modify the logo.
+
+DO NOT turn the logo into an object.
+
+DO NOT turn the logo into:
+
+- a building
+- a monument
+- a sculpture
+- a statue
+- a billboard
+- a sign
+- a wall graphic
+- an advertisement
+- a giant object
+- fake branding
+
+DO NOT place a copy of the logo anywhere in the generated image.
+
+The real logo will be placed separately by the application.
+
+============================================================
+NO BRANDING
+============================================================
+
+Do NOT create:
+
+- fake company branding
+- fake organization branding
+- fake logos
+- fake signs
+- fake advertisements
+- branded vehicles
+- branded buildings
+- branded uniforms
+- branded products
+
+Keep the environment visually authentic.
+
+============================================================
+TEXT RESTRICTION
+============================================================
+
+ABSOLUTELY NO READABLE TEXT.
+
+Do NOT generate:
+
+- Thai text
+- English text
+- Chinese text
+- Japanese text
+- letters
+- numbers
+- words
+- captions
+- labels
+- signs
+- road signs
+- advertisements
+- billboards
+- posters
+- banners
+- menus
+- documents
+- watermarks
+- typography
+
+ZERO readable text.
+
+If a real-world environment normally contains signs,
+make them blank, distant, blurred, unreadable,
+or positioned outside the visible composition.
+
+============================================================
+UI RESTRICTION
+============================================================
+
+This is ONLY environmental artwork.
+
+DO NOT generate:
+
+- smartphone
+- tablet
+- laptop
+- computer interface
+- website
+- application UI
+- dashboard
+- buttons
+- menus
+- cards
+- navigation bars
+- interface elements
+- screenshots
+- app mockups
+
+============================================================
+COMPOSITION
+============================================================
+
+Create a premium vertical mobile artwork.
+
+Aspect ratio: 9:16.
+
+The image will be used as a mobile application cover.
+
+Composition requirements:
+
+- strong foreground
+- meaningful middle ground
+- realistic background
+- natural depth
+- realistic perspective
+- cinematic framing
+
+Keep the:
+
+- upper-left area relatively clean
+- upper-center area relatively clean
+
+The top area will later contain:
+
+- the real organization logo
+- application name
+- application subtitle
+
+Therefore:
+
+DO NOT place the main subject directly behind
+the upper-left title area.
+
+The most important environmental subject
+should primarily occupy the middle and lower portions
+of the image.
+
+Use negative space naturally.
+
+Do NOT create a huge empty white area.
+
+The upper area should still feel like part of the environment,
+but remain visually calm enough for overlay text.
+
+============================================================
+VISUAL STYLE
+============================================================
+
+Premium commercial photography.
+
+Cinematic environmental photography.
+
+Photorealistic.
+
+Highly detailed.
+
+Professional advertising photography.
+
+High-end commercial artwork.
+
+Realistic architecture.
+
+Realistic materials.
+
+Realistic vegetation when appropriate.
+
+Realistic objects.
+
+Realistic people when appropriate.
+
+Natural human proportions.
+
+Natural lighting.
+
+Beautiful daylight.
+
+Soft sunlight.
+
+Realistic shadows.
+
+Subtle atmospheric depth.
+
+Natural color grading.
+
+Sophisticated composition.
+
+Modern elegant appearance.
+
+Trustworthy atmosphere.
+
+Welcoming atmosphere.
+
+Authentic environment.
+
+Avoid excessive fantasy.
+
+Avoid surrealism unless the application context
+clearly requires it.
+
+============================================================
+PEOPLE
+============================================================
+
+People may appear only when appropriate.
+
+People should normally be secondary environmental elements.
+
+They should support the context of the application.
 
 For example:
 
-- hospital -> subtle medical visual elements
-- school -> subtle education elements
-- coffee shop -> subtle coffee elements
-- government office -> subtle public-service elements
-- museum -> subtle cultural elements
-- financial service -> subtle finance elements
+- people using a relevant facility
+- people receiving a service
+- people working in the environment
+- people performing relevant activities
 
-Do NOT replace the original logo with an unrelated
-image.
+Do NOT make one random person the main subject.
 
-Do NOT invent a completely different logo.
+Avoid:
 
-Do NOT create a poster.
+- exaggerated poses
+- unrealistic anatomy
+- distorted faces
+- duplicated people
+- unnatural hands
 
-Do NOT create a banner.
+============================================================
+VISUAL PRIORITY
+============================================================
 
-Do NOT create a website.
+Priority order:
 
-Do NOT create a mobile UI.
+1. Correctly represent the application/service.
+2. Create a believable real-world environment.
+3. Reflect the organization's visual identity subtly.
+4. Create premium commercial composition.
+5. Preserve clean space for application branding overlay.
 
-Do NOT create buttons.
+The semantic meaning of the scene is MORE IMPORTANT
+than making the image simply beautiful.
 
-Do NOT create a phone frame.
+============================================================
+FINAL RESULT
+============================================================
 
-Do NOT add large text.
+Generate ONLY ONE environmental artwork.
 
-Do NOT add random letters.
+The artwork must look like a premium,
+high-quality vertical commercial photograph.
 
-Do NOT add random typography.
+It must visually communicate the purpose
+of the application and organization.
 
-Do NOT add watermark.
+It must NOT contain:
 
-Do NOT distort the original logo unnecessarily.
+- text
+- letters
+- numbers
+- logos
+- fake branding
+- UI
+- application interface
+- watermark
+- typography
 
-The final image should look like a
-professional minimal sticker / mascot illustration
-derived from the uploaded organization logo.
-  `.trim();
+The organization logo must NOT appear in the generated image.
+
+The logo is ONLY used as a visual reference
+for understanding organizational identity.
+
+Aspect ratio: 9:16.
+
+IMPORTANT FINAL INSTRUCTION:
+
+Do not explain your reasoning.
+
+Do not output text.
+
+Only generate the final environmental image.
+`;
 };
 
+/**
+ * ============================================================
+ * Utility
+ * ============================================================
+ */
 
-/* =========================================================
-   DATA URL -> BLOB
-   ========================================================= */
-
-const dataUrlToBlob = (
-  dataUrl: string
-): Blob => {
-  const match =
-    dataUrl.match(
-      /^data:([^;,]+)?(?:;base64)?,(.*)$/
-    );
-
-  if (!match) {
-    throw new Error(
-      'รูปโลโก้มีรูปแบบไม่ถูกต้อง'
-    );
-  }
-
-  const mimeType =
-    match[1] ||
-    'image/png';
-
-  const data =
-    match[2];
-
-  if (
-    dataUrl.includes(';base64')
-  ) {
-    const binary =
-      Buffer.from(
-        data,
-        'base64'
-      );
-
-    return new Blob(
-      [binary],
-      {
-        type: mimeType,
-      }
-    );
-  }
-
-  return new Blob(
-    [
-      decodeURIComponent(
-        data
-      ),
-    ],
-    {
-      type: mimeType,
-    }
+const sleep = async (
+  ms: number
+): Promise<void> => {
+  await new Promise<void>((resolve) =>
+    setTimeout(resolve, ms)
   );
 };
 
+/**
+ * ============================================================
+ * Convert Data URL → Blob
+ * ============================================================
+ */
 
-/* =========================================================
-   POLL DEAPI JOB
-   ========================================================= */
+const dataUrlToBlob = async (
+  dataUrl: string
+): Promise<Blob> => {
+  if (!dataUrl.startsWith('data:')) {
+    throw new Error(
+      'รูปโลโก้ต้องเป็น Data URL'
+    );
+  }
+
+  const response = await fetch(dataUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      'ไม่สามารถอ่านไฟล์โลโก้ได้'
+    );
+  }
+
+  return await response.blob();
+};
+
+/**
+ * ============================================================
+ * Submit deAPI Image Generation Job
+ * ============================================================
+ */
+
+const submitDeApiJob = async (
+  appNameTH: string,
+  appNameEN: string,
+  orgLogo: string
+) => {
+  const apiKey =
+    process.env.DEAPI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      'DEAPI_API_KEY_MISSING'
+    );
+  }
+
+  const logoBlob =
+    await dataUrlToBlob(orgLogo);
+
+  if (
+    logoBlob.size >
+    10 * 1024 * 1024
+  ) {
+    throw new Error(
+      'โลโก้มีขนาดใหญ่เกิน 10 MB'
+    );
+  }
+
+  const prompt =
+    buildImagePrompt(
+      appNameTH,
+      appNameEN
+    );
+
+  /**
+   * ----------------------------------------------------------
+   * Retry Loop
+   * ----------------------------------------------------------
+   *
+   * สำคัญ:
+   * FormData ใหม่ทุกครั้ง
+   * เพราะ request body ไม่ควรถูก reuse หลังจาก fetch
+   */
+
+  for (
+    let attempt = 0;
+    attempt <= DEAPI_RETRY_DELAYS.length;
+    attempt++
+  ) {
+    const formData =
+      new FormData();
+
+    formData.append(
+      'model',
+      DEAPI_MODEL
+    );
+
+    formData.append(
+      'prompt',
+      prompt
+    );
+
+    formData.append(
+      'width',
+      '768'
+    );
+
+    formData.append(
+      'height',
+      '1360'
+    );
+
+    formData.append(
+      'steps',
+      '4'
+    );
+
+    formData.append(
+      'seed',
+      '-1'
+    );
+
+    formData.append(
+      'image',
+      logoBlob,
+      'organization-logo.png'
+    );
+
+    console.log(
+      `deAPI image request attempt ${
+        attempt + 1
+      }/${DEAPI_RETRY_DELAYS.length + 1}`
+    );
+
+    const response =
+      await fetch(
+        DEAPI_IMAGE_EDIT_ENDPOINT,
+        {
+          method: 'POST',
+
+          headers: {
+            Authorization:
+              `Bearer ${apiKey}`,
+
+            Accept:
+              'application/json',
+          },
+
+          body:
+            formData,
+
+          cache:
+            'no-store',
+        }
+      );
+
+    const responseText =
+      await response.text();
+
+    let data: any = null;
+
+    try {
+      data =
+        JSON.parse(
+          responseText
+        );
+    } catch {
+      data = null;
+    }
+
+    /**
+     * --------------------------------------------------------
+     * SUCCESS
+     * --------------------------------------------------------
+     */
+
+    if (response.ok) {
+      const requestId =
+        data?.data?.request_id ||
+        data?.request_id;
+
+      if (!requestId) {
+        throw new Error(
+          'deAPI ไม่ได้ส่ง request_id กลับมา'
+        );
+      }
+
+      return requestId;
+    }
+
+    /**
+     * --------------------------------------------------------
+     * RATE LIMIT
+     * --------------------------------------------------------
+     */
+
+    if (
+      response.status === 429
+    ) {
+      const retryAfterHeader =
+        response.headers.get(
+          'retry-after'
+        );
+
+      let retryAfterMs =
+        DEAPI_RETRY_DELAYS[
+          attempt
+        ];
+
+      if (retryAfterHeader) {
+        const retryAfterSeconds =
+          Number(
+            retryAfterHeader
+          );
+
+        if (
+          Number.isFinite(
+            retryAfterSeconds
+          ) &&
+          retryAfterSeconds >= 0
+        ) {
+          retryAfterMs =
+            retryAfterSeconds * 1000;
+        }
+      }
+
+      /**
+       * ถ้ายังมี retry เหลือ
+       */
+
+      if (
+        attempt <
+        DEAPI_RETRY_DELAYS.length
+      ) {
+        console.warn(
+          `deAPI rate limited (429). Retrying in ${
+            Math.ceil(
+              retryAfterMs / 1000
+            )
+          } seconds...`
+        );
+
+        await sleep(
+          retryAfterMs
+        );
+
+        continue;
+      }
+
+      /**
+       * Retry ครบแล้ว
+       */
+
+      throw new Error(
+        'DEAPI_RATE_LIMITED'
+      );
+    }
+
+    /**
+     * --------------------------------------------------------
+     * Other API Errors
+     * --------------------------------------------------------
+     */
+
+    throw new Error(
+      `deAPI request failed (${response.status}): ${
+        data?.error ||
+        data?.message ||
+        responseText ||
+        'Unknown error'
+      }`
+    );
+  }
+
+  throw new Error(
+    'DEAPI_RATE_LIMITED'
+  );
+};
+
+/**
+ * ============================================================
+ * Poll deAPI Job
+ * ============================================================
+ */
 
 const waitForDeApiResult = async (
-  requestId: string,
-  apiKey: string
-) => {
+  requestId: string
+): Promise<string> => {
+  const apiKey =
+    process.env.DEAPI_API_KEY;
 
-  const maxAttempts = 60;
+  if (!apiKey) {
+    throw new Error(
+      'DEAPI_API_KEY_MISSING'
+    );
+  }
 
-  const pollInterval = 2000;
+  const maxAttempts =
+    60;
+
+  const pollInterval =
+    2000;
 
   for (
     let attempt = 0;
     attempt < maxAttempts;
     attempt++
   ) {
-
-    await new Promise<void>(
-      (resolve) =>
-        setTimeout(
-          resolve,
-          pollInterval
-        )
-    );
-
-
-    const jobResponse =
+    const response =
       await fetch(
-        `https://api.deapi.ai/api/v2/jobs/${requestId}`,
+        `${DEAPI_JOB_ENDPOINT}/${requestId}`,
         {
           method: 'GET',
 
           headers: {
-            Accept:
-              'application/json',
-
             Authorization:
               `Bearer ${apiKey}`,
+
+            Accept:
+              'application/json',
           },
+
+          cache:
+            'no-store',
         }
       );
 
+    const responseText =
+      await response.text();
 
-    if (!jobResponse.ok) {
+    let data: any = null;
 
-      const errorText =
-        await jobResponse.text();
+    try {
+      data =
+        JSON.parse(
+          responseText
+        );
+    } catch {
+      data = null;
+    }
 
+    if (!response.ok) {
       throw new Error(
-        `FLUX job status failed: ${errorText}`
+        `deAPI job check failed (${response.status}): ${
+          data?.error ||
+          data?.message ||
+          responseText ||
+          'Unknown error'
+        }`
       );
     }
 
-
-    const jobData =
-      (await jobResponse.json()) as {
-        data?: {
-          status?: string;
-          result_url?: string;
-          result?: string;
-          error?: string;
-        };
-      };
-
-
     const job =
-      jobData?.data;
-
+      data?.data ||
+      data;
 
     const status =
       job?.status;
 
-
     console.log(
-      `FLUX generation status: ${status}`
+      `deAPI job ${requestId}: ${status} (${job?.progress ?? 0}%)`
     );
 
+    /**
+     * SUCCESS
+     */
 
     if (
       status === 'done'
     ) {
-
-      const result =
+      const resultUrl =
         job?.result_url ||
-        job?.result;
+        job?.result ||
+        job?.results_alt_formats?.png ||
+        job?.results_alt_formats?.jpg;
 
-      if (result) {
-        return result;
+      if (!resultUrl) {
+        throw new Error(
+          'deAPI สร้างภาพเสร็จแล้วแต่ไม่พบ result_url'
+        );
       }
 
-      throw new Error(
-        'FLUX สร้างภาพสำเร็จแต่ไม่พบ URL ของภาพ'
-      );
+      return resultUrl;
     }
 
+    /**
+     * ERROR
+     */
 
     if (
-      status === 'error'
+      status === 'error' ||
+      status === 'failed'
     ) {
-
       throw new Error(
-        job?.error ||
-          'FLUX สร้างภาพไม่สำเร็จ'
+        `deAPI image generation error: ${
+          job?.error ||
+          job?.message ||
+          'Unknown generation error'
+        }`
       );
     }
 
-  }
+    /**
+     * WAIT
+     */
 
+    await sleep(
+      pollInterval
+    );
+  }
 
   throw new Error(
-    'FLUX ใช้เวลาสร้างภาพนานเกินไป'
+    'deAPI ใช้เวลาสร้างภาพนานเกินกำหนด กรุณาลองใหม่อีกครั้ง'
   );
 };
 
+/**
+ * ============================================================
+ * Download Result → Data URL
+ * ============================================================
+ */
 
-/* =========================================================
-   GENERATE IMAGE FROM LOGO
-   ========================================================= */
-
-const generateWithDeApi = async (
-  appNameTH: string,
-  appNameEN: string,
-  orgLogo: string
-) => {
-
-  const apiKey =
-    process.env.DEAPI_API_KEY;
-
-
-  if (!apiKey) {
-
-    console.warn(
-      'DEAPI_API_KEY is not configured.'
-    );
-
-    return null;
-  }
-
-
-  if (!orgLogo) {
-
-    throw new Error(
-      'ไม่พบโลโก้สำหรับสร้างภาพ'
-    );
-  }
-
-
-  const prompt =
-    buildPrompt(
-      appNameTH,
-      appNameEN
-    );
-
-
-  const imageBlob =
-    dataUrlToBlob(
-      orgLogo
-    );
-
-
-  /*
-   * deAPI Image Edit
-   *
-   * ใช้ FLUX.2 Klein
-   * เพื่อเปลี่ยนโลโก้ที่อัปโหลด
-   * ให้เป็น sticker illustration
-   */
-
-  const formData =
-    new FormData();
-
-
-  formData.append(
-    'image',
-    imageBlob,
-    'organization-logo.png'
-  );
-
-
-  formData.append(
-    'prompt',
-    prompt
-  );
-
-
-  formData.append(
-    'model',
-    DEAPI_MODEL
-  );
-
-
-  formData.append(
-    'steps',
-    '4'
-  );
-
-
-  formData.append(
-    'seed',
-    String(
-      Math.floor(
-        Math.random() *
-          2147483647
-      )
-    )
-  );
-
-
-  console.log(
-    'FLUX image edit model:',
-    DEAPI_MODEL
-  );
-
-
+const downloadAsDataUrl = async (
+  imageUrl: string
+): Promise<string> => {
   const response =
     await fetch(
-      DEAPI_EDIT_URL,
-      {
-        method: 'POST',
-
-        headers: {
-          Accept:
-            'application/json',
-
-          Authorization:
-            `Bearer ${apiKey}`,
-        },
-
-        body:
-          formData,
-      }
+      imageUrl
     );
-
 
   if (!response.ok) {
-
-    const errorText =
-      await response.text();
-
     throw new Error(
-      `FLUX image edit failed: ${errorText}`
+      'ไม่สามารถดาวน์โหลดภาพจาก deAPI ได้'
     );
   }
 
+  const contentType =
+    response.headers.get(
+      'content-type'
+    ) ||
+    'image/png';
 
-  const data =
-    (await response.json()) as {
-      data?: {
-        request_id?: string;
-      };
-    };
+  const arrayBuffer =
+    await response.arrayBuffer();
 
+  const base64 =
+    Buffer
+      .from(arrayBuffer)
+      .toString('base64');
 
-  const requestId =
-    data?.data?.request_id;
-
-
-  if (!requestId) {
-
-    throw new Error(
-      'deAPI ไม่ได้ส่ง request_id กลับมา'
-    );
-  }
-
-
-  return await waitForDeApiResult(
-    requestId,
-    apiKey
-  );
+  return `data:${contentType};base64,${base64}`;
 };
 
-
-/* =========================================================
-   POST
-   ========================================================= */
+/**
+ * ============================================================
+ * POST
+ * ============================================================
+ */
 
 export async function POST(
   request: Request
 ) {
-
   try {
-
     const body =
-      (await request.json()) as {
-        appNameTH?: string;
-        appNameEN?: string;
-        orgLogo?: string;
-      };
-
+      await request.json();
 
     const appNameTH =
-      body.appNameTH?.trim() ||
-      '';
-
+      typeof body.appNameTH === 'string'
+        ? body.appNameTH.trim()
+        : '';
 
     const appNameEN =
-      body.appNameEN?.trim() ||
-      '';
-
+      typeof body.appNameEN === 'string'
+        ? body.appNameEN.trim()
+        : '';
 
     const orgLogo =
-      body.orgLogo?.trim() ||
-      '';
+      typeof body.orgLogo === 'string'
+        ? body.orgLogo.trim()
+        : '';
 
-
-    /*
-     * ต้องมีชื่อแอป
+    /**
+     * ========================================================
+     * VALIDATION
+     * ========================================================
      */
 
     if (
       !appNameTH &&
       !appNameEN
     ) {
-
-      return Response.json(
+      return NextResponse.json(
         {
           error:
-            'กรุณาใส่ชื่อแอปก่อน',
+            'กรุณาใส่ชื่อแอปก่อนสร้างภาพ',
         },
         {
           status: 400,
@@ -828,17 +989,8 @@ export async function POST(
       );
     }
 
-
-    /*
-     * ต้องมีโลโก้
-     *
-     * เพราะตอนนี้ FLUX จะใช้
-     * โลโก้เป็นภาพต้นฉบับ
-     */
-
     if (!orgLogo) {
-
-      return Response.json(
+      return NextResponse.json(
         {
           error:
             'กรุณาอัปโหลดโลโก้องค์กรก่อนสร้างภาพ',
@@ -849,91 +1001,130 @@ export async function POST(
       );
     }
 
-
-    try {
-
-      const image =
-        await generateWithDeApi(
-          appNameTH,
-          appNameEN,
-          orgLogo
-        );
-
-
-      if (image) {
-
-        return Response.json(
-          {
-            result: image,
-
-            source:
-              'flux-image-edit',
-
-            model:
-              DEAPI_MODEL,
-          }
-        );
-      }
-
-    } catch (
-      deApiError
-    ) {
-
-      console.error(
-        'FLUX image edit failed, fallback to local SVG:',
-        deApiError
-      );
-
-    }
-
-
-    /*
-     * ถ้า FLUX ล้มเหลว
-     * ใช้ SVG fallback
-     * และเอาโลโก้จริงมาแสดงด้วย
+    /**
+     * ========================================================
+     * STEP 1
+     * ========================================================
      */
 
-    const generated =
-      buildSvgArtwork(
+    const requestId =
+      await submitDeApiJob(
         appNameTH,
         appNameEN,
         orgLogo
       );
 
-
-    return Response.json(
-      {
-        result:
-          generated,
-
-        source:
-          'local-svg-fallback',
-
-        model:
-          DEAPI_MODEL,
-      }
+    console.log(
+      'deAPI request ID:',
+      requestId
     );
 
+    /**
+     * ========================================================
+     * STEP 2
+     * ========================================================
+     */
 
+    const resultUrl =
+      await waitForDeApiResult(
+        requestId
+      );
+
+    /**
+     * ========================================================
+     * STEP 3
+     * ========================================================
+     */
+
+    const imageDataUrl =
+      await downloadAsDataUrl(
+        resultUrl
+      );
+
+    /**
+     * ========================================================
+     * RETURN
+     * ========================================================
+     */
+
+    return NextResponse.json(
+      {
+        result:
+          imageDataUrl,
+
+        source:
+          'deapi-image-to-image',
+
+        requestId,
+      }
+    );
   } catch (
-    error
+    error: any
   ) {
-
     console.error(
-      'Generate route error:',
+      'deAPI Generate route error:',
       error
     );
 
+    /**
+     * ========================================================
+     * API KEY ERROR
+     * ========================================================
+     */
 
-    return Response.json(
+    if (
+      error?.message ===
+      'DEAPI_API_KEY_MISSING'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'ยังไม่ได้ใส่ DEAPI_API_KEY ในไฟล์ .env.local',
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    /**
+     * ========================================================
+     * RATE LIMIT ERROR
+     * ========================================================
+     */
+
+    if (
+      error?.message ===
+      'DEAPI_RATE_LIMITED'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'deAPI กำลังจำกัดจำนวนการใช้งานชั่วคราว (429 Too Many Attempts) กรุณารอสักครู่แล้วลองใหม่อีกครั้ง',
+        },
+        {
+          status: 429,
+        }
+      );
+    }
+
+    /**
+     * ========================================================
+     * GENERAL ERROR
+     * ========================================================
+     */
+
+    return NextResponse.json(
       {
         error:
-          'AI สร้างรูปไม่สำเร็จ',
+          `AI Error: ${
+            error?.message ||
+            'ไม่ทราบสาเหตุ'
+          }`,
       },
       {
         status: 500,
       }
     );
-
   }
 }
