@@ -670,29 +670,25 @@ export default function MiniAppForm() {
     await waitForImages(element);
     await waitForFonts();
 
-    // รอให้เบราว์เซอร์เตรียม DOM ให้สมบูรณ์ก่อน
     await new Promise<void>((resolve) => setTimeout(resolve, 800));
 
     const options = {
       pixelRatio: renderRatio,
-      backgroundColor: '#ffffff',
-      cacheBust: false, // สำคัญมากสำหรับ Data URLs ห้ามปรับเป็น true
+      backgroundColor: 'transparent',
+      cacheBust: false,
       skipFonts: false,
       style: {
         transform: 'none',
       },
     };
 
-    // HACK สำหรับมือถือ: บังคับให้โหลดทรัพยากรลง Canvas หลอก 1 ครั้งก่อนดึงจริง
     if (isMobile) {
       try {
         await toPng(element, options);
       } catch (e) {
-        // ข้ามข้อผิดพลาดในรอบหลอก
       }
     }
 
-    // วาดและดึงภาพจริง
     return await toPng(element, options);
   };
 
@@ -1082,46 +1078,58 @@ export default function MiniAppForm() {
 
           <div className="flex flex-col items-center">
             <div
-              ref={screen2Ref}
-              className="relative overflow-hidden bg-[#e5f0f9] flex flex-col items-center justify-center"
+              className="relative overflow-hidden"
               style={{
-                width: '360px',
-                height: '640px',
+                backgroundImage:
+                  'linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)',
+                backgroundSize: '20px 20px',
+                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                backgroundColor: '#ffffff',
               }}
             >
-              <div className="w-[280px] h-[560px] bg-[#1a1a1a] rounded-[2.5rem] p-2 shadow-xl relative">
-                <div className="w-full h-full bg-white rounded-[2rem] overflow-hidden flex items-center justify-center relative">
-                  <div
-                    className="absolute top-0 left-1/2 -translate-x-1/2 z-30 bg-[#1a1a1a]"
-                    style={{
-                      width: '130px',
-                      height: '16px',
-                      borderRadius:
-                        '0 0 12px 12px',
-                    }}
-                  >
+              <div
+                ref={screen2Ref}
+                className="relative overflow-hidden flex flex-col items-center justify-center"
+                style={{
+                  width: '360px',
+                  height: '640px',
+                  background: 'transparent',
+                }}
+              >
+                <div className="w-[280px] h-[560px] bg-[#1a1a1a] rounded-[2.5rem] p-2 shadow-xl relative">
+                  <div className="w-full h-full bg-white rounded-[2rem] overflow-hidden flex items-center justify-center relative">
                     <div
-                      className="absolute left-1/2 top-[5px] -translate-x-1/2"
+                      className="absolute top-0 left-1/2 -translate-x-1/2 z-30 bg-[#1a1a1a]"
                       style={{
-                        width: '34px',
-                        height: '3px',
-                        borderRadius: '999px',
-                        backgroundColor:
-                          '#333333',
+                        width: '130px',
+                        height: '16px',
+                        borderRadius:
+                          '0 0 12px 12px',
                       }}
-                    />
+                    >
+                      <div
+                        className="absolute left-1/2 top-[5px] -translate-x-1/2"
+                        style={{
+                          width: '34px',
+                          height: '3px',
+                          borderRadius: '999px',
+                          backgroundColor:
+                            '#333333',
+                        }}
+                      />
+                    </div>
+                    {screenshot ? (
+                      <img
+                        src={screenshot}
+                        className="w-full h-full object-cover"
+                        alt="Screenshot"
+                      />
+                    ) : (
+                      <span className="text-gray-400">
+                        ภาพแคปหน้าจอ
+                      </span>
+                    )}
                   </div>
-                  {screenshot ? (
-                    <img
-                      src={screenshot}
-                      className="w-full h-full object-cover"
-                      alt="Screenshot"
-                    />
-                  ) : (
-                    <span className="text-gray-400">
-                      ภาพแคปหน้าจอ
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
