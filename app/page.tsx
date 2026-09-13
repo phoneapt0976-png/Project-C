@@ -678,11 +678,6 @@ export default function MiniAppForm() {
     async (
       element: HTMLElement
     ): Promise<string> => {
-      /*
-       * มือถือใช้ pixelRatio ต่ำกว่า PC
-       * เพื่อป้องกัน iPhone / Android
-       * หน่วยความจำไม่พอเวลาสร้าง PNG
-       */
       const isMobile =
         /Android|iPhone|iPad|iPod/i.test(
           navigator.userAgent
@@ -697,9 +692,6 @@ export default function MiniAppForm() {
 
       await waitForFonts();
 
-      /*
-       * รอให้ Browser render ทุกอย่างเสร็จ
-       */
       await new Promise<void>(
         (resolve) =>
           requestAnimationFrame(
@@ -734,17 +726,7 @@ export default function MiniAppForm() {
               'none',
           },
 
-          /*
-           * ช่วยลดปัญหาการ render
-           * รูปภาพจากมือถือ
-           */
-          filter: (node) => {
-            if (
-              node instanceof HTMLElement
-            ) {
-              return true;
-            }
-
+          filter: () => {
             return true;
           },
         }
@@ -774,32 +756,116 @@ export default function MiniAppForm() {
    * MOBILE DOWNLOAD
    * ==========================================================
    *
-   * บน iPhone / Android:
+   * วิธีใหม่:
    *
    * 1. สร้าง PNG
    * 2. แปลงเป็น Blob
-   * 3. สร้าง Blob URL
-   * 4. เปิดรูปในแท็บใหม่
+   * 3. สร้าง File
+   * 4. ถ้า Browser รองรับ Web Share + Files
+   *    ให้เปิด Share Sheet ของมือถือ
+   * 5. ถ้าไม่รองรับ ให้เปิดรูปโดยตรง
    *
-   * จากนั้นผู้ใช้สามารถกด Share / Save Image
-   * จาก Browser ได้
-   *
-   * วิธีนี้ไม่พึ่ง navigator.share()
-   * ซึ่งมีปัญหากับบาง Browser / iOS version
+   * วิธีนี้เหมาะกับ iPhone Safari มากกว่า
+   * การสร้าง <a download> หรือเปิด blob URL
    */
   const downloadOnMobile =
     async (
       blob: Blob,
       filename: string
     ) => {
+      const file =
+        new File(
+          [blob],
+          filename,
+          {
+            type: 'image/png',
+          }
+        );
+
+      /*
+       * ======================================================
+       * IOS / ANDROID
+       * ======================================================
+       *
+       * ถ้ารองรับ Share Files:
+       * เปิด Share Sheet ของระบบโดยตรง
+       *
+       * บน iPhone ผู้ใช้สามารถเลือก
+       * "Save Image" / "บันทึกรูปภาพ"
+       * หรือบันทึกไปยัง Files ได้
+       */
+      if (
+        typeof navigator !==
+          'undefined' &&
+        'share' in navigator &&
+        'canShare' in navigator
+      ) {
+        try {
+          const shareNavigator =
+            navigator as Navigator & {
+              share?: (data: {
+                files?: File[];
+                title?: string;
+                text?: string;
+              }) => Promise<void>;
+
+              canShare?: (data: {
+                files?: File[];
+              }) => boolean;
+            };
+
+          const canShareFile =
+            shareNavigator.canShare?.({
+              files: [file],
+            });
+
+          if (
+            canShareFile &&
+            shareNavigator.share
+          ) {
+            await shareNavigator.share({
+              files: [file],
+              title: filename,
+            });
+
+            return;
+          }
+        } catch (error) {
+          /*
+           * ถ้าผู้ใช้กดยกเลิก Share
+           * ไม่ต้องแจ้ง Error
+           */
+          if (
+            error instanceof DOMException &&
+            error.name ===
+              'AbortError'
+          ) {
+            return;
+          }
+
+          console.warn(
+            'Mobile Share ไม่สำเร็จ:',
+            error
+          );
+        }
+      }
+
+      /*
+       * ======================================================
+       * FALLBACK
+       * ======================================================
+       *
+       * Browser บางตัวไม่รองรับ Share Files
+       * จึงเปิดรูปโดยตรง
+       *
+       * ผู้ใช้สามารถกดค้างที่รูป
+       * แล้วเลือกบันทึกรูปภาพได้
+       */
       const blobUrl =
         URL.createObjectURL(
           blob
         );
 
-      /*
-       * เปิดรูปในแท็บใหม่
-       */
       const newWindow =
         window.open(
           '',
@@ -815,7 +881,10 @@ export default function MiniAppForm() {
                 name="viewport"
                 content="width=device-width, initial-scale=1.0"
               />
-              <title>${filename}</title>
+
+              <title>
+                ${filename}
+              </title>
 
               <style>
                 * {
@@ -906,10 +975,6 @@ export default function MiniAppForm() {
 
         newWindow.document.close();
 
-        /*
-         * ไม่ revoke เร็วเกินไป
-         * เพราะ iPhone Safari ต้องใช้เวลาโหลด Blob
-         */
         setTimeout(() => {
           URL.revokeObjectURL(
             blobUrl
@@ -920,8 +985,8 @@ export default function MiniAppForm() {
       }
 
       /*
-       * ถ้า Browser บล็อก popup
-       * ให้เปิด Blob URL ในหน้าปัจจุบันแทน
+       * Popup ถูก Browser บล็อก
+       * เปิดรูปในหน้าเดิมแทน
        */
       window.location.href =
         blobUrl;
