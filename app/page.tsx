@@ -668,7 +668,7 @@ export default function MiniAppForm() {
       element: HTMLElement
     ): Promise<string> => {
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const renderRatio = isMobile ? 2 : 3;
+      const renderRatio = isMobile ? 1.2 : 3;
 
       await waitForImages(
         element
@@ -748,64 +748,10 @@ export default function MiniAppForm() {
           navigator.userAgent
         );
 
-      let newWindow:
-        | Window
-        | null = null;
-
       try {
         setIsDownloading(
           true
         );
-
-        if (isMobile) {
-          newWindow =
-            window.open(
-              '',
-              '_blank'
-            );
-
-          if (!newWindow) {
-            alert(
-              'เบราว์เซอร์บล็อกหน้าต่างใหม่\n\nกรุณาอนุญาต Pop-up แล้วลองอีกครั้ง'
-            );
-            return;
-          }
-
-          newWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>กำลังสร้างภาพ...</title>
-                <meta
-                  name="viewport"
-                  content="width=device-width, initial-scale=1.0"
-                />
-                <style>
-                  body {
-                    margin: 0;
-                    background: #222;
-                    color: white;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                  }
-                </style>
-              </head>
-              <body>
-                <div>
-                  กำลังสร้างภาพ...
-                  <br />
-                  กรุณารอสักครู่
-                </div>
-              </body>
-            </html>
-          `);
-
-          newWindow.document.close();
-        }
 
         await waitForImages(
           element
@@ -832,92 +778,22 @@ export default function MiniAppForm() {
           );
         }
 
-        if (
-          isMobile &&
-          newWindow
-        ) {
-          const safeFilename =
-            filename.replace(
-              /["<>]/g,
-              ''
-            );
-
-          newWindow.document.open();
-
-          newWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>
-                  ${safeFilename}
-                </title>
-                <meta
-                  name="viewport"
-                  content="width=device-width, initial-scale=1.0"
-                />
-                <style>
-                  * {
-                    box-sizing: border-box;
-                  }
-                  html,
-                  body {
-                    margin: 0;
-                    padding: 0;
-                    background: #222;
-                    min-height: 100%;
-                    font-family: Arial, sans-serif;
-                  }
-                  .container {
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 20px;
-                  }
-                  img {
-                    display: block;
-                    max-width: 100%;
-                    width: auto;
-                    height: auto;
-                    border-radius: 8px;
-                  }
-                  .text {
-                    color: white;
-                    text-align: center;
-                    margin-top: 16px;
-                    font-size: 14px;
-                    line-height: 1.6;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <img
-                    src="${dataUrl}"
-                    alt="${safeFilename}"
-                  />
-                  <div class="text">
-                    📱 แตะค้างที่รูปภาพ
-                    <br />
-                    แล้วเลือก
-                    "บันทึกภาพ"
-                    หรือ
-                    "Save Image"
-                  </div>
-                </div>
-              </body>
-            </html>
-          `);
-
-          newWindow.document.close();
-          return;
-        }
-
         const blob =
           await dataUrlToBlob(
             dataUrl
           );
+
+        if (isMobile && navigator.share) {
+          const file = new File([blob], filename, { type: 'image/png' });
+          try {
+            await navigator.share({
+              files: [file],
+            });
+            return;
+          } catch (shareErr: any) {
+            console.log('Share API fallback:', shareErr);
+          }
+        }
 
         const blobUrl =
           URL.createObjectURL(
@@ -967,13 +843,6 @@ export default function MiniAppForm() {
           'Download error:',
           err
         );
-
-        if (
-          newWindow &&
-          !newWindow.closed
-        ) {
-          newWindow.close();
-        }
 
         let errorMessage =
           'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
