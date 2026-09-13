@@ -455,7 +455,7 @@ const dataUrlToBlob = (
 ): Blob => {
   const match =
     dataUrl.match(
-      /^data:([^;,]+)?(?:;base64)?,(.*)$/s
+      /^data:([^;,]+)?(?:;base64)?,(.*)$/
     );
 
   if (!match) {
