@@ -2,1129 +2,319 @@ import { NextResponse } from 'next/server';
 
 /**
  * ============================================================
- * DEAPI MINI APP ARTWORK GENERATOR
+ * 1. ฟังก์ชันป้องกันอักขระพิเศษ
  * ============================================================
  */
-
-const DEAPI_API_URL = 'https://api.deapi.ai';
-
-const DEAPI_IMAGE_EDIT_ENDPOINT =
-  `${DEAPI_API_URL}/api/v2/images/edits`;
-
-const DEAPI_JOB_ENDPOINT =
-  `${DEAPI_API_URL}/api/v2/jobs`;
-
-const DEAPI_MODEL =
-  process.env.DEAPI_IMAGE_MODEL ||
-  'Flux_2_Klein_4B_BF16';
+const escapeXml = (value: string) => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
 
 /**
  * ============================================================
- * Retry Settings
- * ============================================================
- *
- * Retry เฉพาะ HTTP 429
- *
- * 1st retry  -> 3 sec
- * 2nd retry  -> 7 sec
- * 3rd retry  -> 15 sec
- */
-
-const DEAPI_RETRY_DELAYS = [
-  3000,
-  7000,
-  15000,
-];
-
-/**
- * ============================================================
- * Build Image Prompt
+ * 2. วิเคราะห์บริบทของภาพจากชื่อแอป
  * ============================================================
  */
-
-const buildImagePrompt = (
+const inferVisualContext = (
   appNameTH: string,
   appNameEN: string
 ) => {
+  const text = `${appNameTH} ${appNameEN}`.trim().toLowerCase();
+
+  if (text.match(/มอเตอร์ไซค์|รถจักร|motorcycle|scooter/)) {
+    return 'premium motorcycle dealership and professional motorcycle service center environment';
+  }
+  if (text.match(/รถยนต์|รถเก๋ง|รถมือสอง|เต็นท์รถ|car|automotive|vehicle/)) {
+    return 'premium modern automotive dealership environment';
+  }
+  if (text.match(/สัตว์|สวนสัตว์|zoo|animal/)) {
+    // ปรับให้ระบุชัดเจนว่ามีเสือแค่ 1 ตัว เดินเข้าหากล้อง สรีระสมบูรณ์แบบ
+    return 'beautiful realistic wildlife sanctuary with ONLY ONE magnificent adult tiger walking towards the camera in a lush tropical forest, perfect animal anatomy, natural animal habitat';
+  }
+  if (text.match(/กีฬา|ฟิตเนส|ฟุตบอล|วิ่ง|sport|fitness|football|gym/)) {
+    return 'premium athletic sports and lifestyle environment';
+  }
+  if (text.match(/โรงพยาบาล|คลินิก|สุขภาพ|การแพทย์|หมอ|health|hospital|clinic/)) {
+    return 'modern premium hospital and healthcare environment';
+  }
+  if (text.match(/โรงเรียน|มหาวิทยาลัย|วิทยาลัย|การศึกษา|school|university|education/)) {
+    return 'modern premium educational campus environment';
+  }
+  if (text.match(/ธนาคาร|การเงิน|สินเชื่อ|ลงทุน|ประกัน|bank|finance|investment/)) {
+    return 'premium modern financial service environment';
+  }
+  if (text.match(/ร้านอาหาร|ภัตตาคาร|restaurant|food|dining/)) {
+    return 'premium modern restaurant environment';
+  }
+  if (text.match(/คาเฟ่|ร้านกาแฟ|เบเกอรี่|cafe|coffee|bakery/)) {
+    return 'premium modern cafe environment';
+  }
+  if (text.match(/ร้านค้า|ช้อป|ค้าปลีก|shopping|shop|store|retail/)) {
+    return 'premium modern retail environment';
+  }
+  if (text.match(/ห้องสมุด|หนังสือ|library|book/)) {
+    return 'premium modern public library environment';
+  }
+  if (text.match(/ท่องเที่ยว|ทัวร์|โรงแรม|รีสอร์ท|tour|hotel|travel/)) {
+    return 'premium Thai tourism destination environment';
+  }
+  if (text.match(/ตำรวจ|police/)) {
+    return 'modern professional police service environment';
+  }
+  if (text.match(/ราชการ|รัฐบาล|เทศบาล|กรม|กอง|สำนักงาน|government|civic/)) {
+    return 'premium modern civic public service environment';
+  }
+  if (text.match(/เกษตร|ฟาร์ม|ไร่|สวน|agriculture|farm/)) {
+    return 'premium modern agricultural innovation environment';
+  }
+  if (text.match(/ขนส่ง|เดินทาง|รถไฟ|สนามบิน|transport|transit|airport/)) {
+    return 'premium modern transportation hub environment';
+  }
+  if (text.match(/เทคโนโลยี|ไอที|ซอฟต์แวร์|technology|tech|software|digital/)) {
+    return 'premium modern technology business environment';
+  }
+
+  return 'premium modern business and service environment';
+};
+
+/**
+ * ============================================================
+ * 3. Prompt สำหรับ AI
+ * ============================================================
+ */
+const buildImagePrompt = (visualContext: string) => {
   return `
-You are an expert visual concept director,
-branding analyst, environment designer,
-commercial photographer, and AI image prompt specialist.
+Create ONE clean premium vertical environmental photograph.
 
-You are given information about a mobile application.
+SCENE:
+${visualContext}
 
-============================================================
-APPLICATION INFORMATION
-============================================================
-
-THAI APPLICATION NAME:
-${appNameTH || '(not provided)'}
-
-ENGLISH APPLICATION NAME:
-${appNameEN || '(not provided)'}
-
-You are ALSO given an organization logo as a visual reference image.
-
-============================================================
-YOUR TASK
-============================================================
-
-First, intelligently understand the meaning of the application.
-
-Use BOTH:
-
-1. The application name
-2. The organization logo
-
-to infer the most likely:
-
-- organization identity
-- organization type
-- industry
-- service domain
-- public-service domain
-- business domain
-- real-world activity
-- environment
-- architecture
-- objects
-- surroundings
-- atmosphere
-- visual tone
-
-Then create ONE environmental artwork that visually represents
-what this application actually does or what service it provides.
-
-The generated image should communicate the purpose of the application
-WITHOUT using any text.
+The image must look like a real professional commercial photograph.
+Show ONLY ONE main subject and environment naturally with PERFECT ANATOMY and REALISTIC PROPORTIONS.
 
 IMPORTANT:
-
-Do NOT simply create a generic attractive background.
-
-The environment must have a meaningful relationship
-with the application.
-
-The scene should make sense if a person sees the image
-without seeing the application name.
-
-============================================================
-CONTEXT REASONING
-============================================================
-
-Do NOT use fixed keyword mapping.
-
-Do NOT follow rules such as:
-
-"hospital = hospital building"
-
-"restaurant = restaurant"
-
-"school = classroom"
-
-"government = government office"
-
-Instead, understand the complete context.
-
-The same word can represent different types of applications.
-
-Consider the relationship between:
-
-- organization
-- service
-- users
-- real-world location
-- real-world activity
-- surrounding environment
-
-Choose the scene that is most semantically appropriate.
-
-The organization logo is an important visual clue,
-but it is NOT an object that should appear in the final image.
-
-============================================================
-REAL-WORLD REPRESENTATION
-============================================================
-
-The artwork should look like a believable real-world environment
-associated with the application.
-
-Examples of possible visual elements include:
-
-- buildings
-- facilities
-- streets
-- public spaces
-- service counters
-- educational environments
-- healthcare environments
-- transportation environments
-- parks
-- nature
-- infrastructure
-- industrial environments
-- offices
-- commercial environments
-- community environments
-- people performing relevant activities
-- relevant objects
-
-However:
-
-ONLY include elements that genuinely make sense
-for the inferred application.
-
-Do NOT randomly add:
-
-- cars
-- motorcycles
-- roads
-- mountains
-- parks
-- towers
-- offices
-- garages
-- city skylines
-
-unless they are actually relevant.
-
-============================================================
-LOGO RESTRICTION
-============================================================
-
-The uploaded organization logo is ONLY a visual reference.
-
-The logo is provided so you can understand
-the organization's identity and visual character.
-
-DO NOT reproduce the logo.
-
-DO NOT redraw the logo.
-
-DO NOT recreate the logo.
-
-DO NOT modify the logo.
-
-DO NOT turn the logo into an object.
-
-DO NOT turn the logo into:
-
-- a building
-- a monument
-- a sculpture
-- a statue
-- a billboard
-- a sign
-- a wall graphic
-- an advertisement
-- a giant object
-- fake branding
-
-DO NOT place a copy of the logo anywhere in the generated image.
-
-The real logo will be placed separately by the application.
-
-============================================================
-NO BRANDING
-============================================================
-
-Do NOT create:
-
-- fake company branding
-- fake organization branding
-- fake logos
-- fake signs
-- fake advertisements
-- branded vehicles
-- branded buildings
-- branded uniforms
-- branded products
-
-Keep the environment visually authentic.
-
-============================================================
-TEXT RESTRICTION
-============================================================
-
-ABSOLUTELY NO READABLE TEXT.
-
-Do NOT generate:
-
-- Thai text
-- English text
-- Chinese text
-- Japanese text
-- letters
-- numbers
-- words
-- captions
-- labels
-- signs
-- road signs
-- advertisements
-- billboards
-- posters
-- banners
-- menus
-- documents
-- watermarks
-- typography
-
-ZERO readable text.
-
-If a real-world environment normally contains signs,
-make them blank, distant, blurred, unreadable,
-or positioned outside the visible composition.
-
-============================================================
-UI RESTRICTION
-============================================================
-
-This is ONLY environmental artwork.
-
-DO NOT generate:
-
-- smartphone
-- tablet
-- laptop
-- computer interface
-- website
-- application UI
-- dashboard
-- buttons
-- menus
-- cards
-- navigation bars
-- interface elements
-- screenshots
-- app mockups
-
-============================================================
-COMPOSITION
-============================================================
-
-Create a premium vertical mobile artwork.
-
-Aspect ratio: 9:16.
-
-The image will be used as a mobile application cover.
-
-Composition requirements:
-
-- strong foreground
-- meaningful middle ground
-- realistic background
-- natural depth
-- realistic perspective
-- cinematic framing
-
-Keep the:
-
-- upper-left area relatively clean
-- upper-center area relatively clean
-
-The top area will later contain:
-
-- the real organization logo
-- application name
-- application subtitle
-
-Therefore:
-
-DO NOT place the main subject directly behind
-the upper-left title area.
-
-The most important environmental subject
-should primarily occupy the middle and lower portions
-of the image.
-
-Use negative space naturally.
-
-Do NOT create a huge empty white area.
-
-The upper area should still feel like part of the environment,
-but remain visually calm enough for overlay text.
-
-============================================================
-VISUAL STYLE
-============================================================
-
-Premium commercial photography.
-
-Cinematic environmental photography.
-
-Photorealistic.
-
-Highly detailed.
-
-Professional advertising photography.
-
-High-end commercial artwork.
-
-Realistic architecture.
-
-Realistic materials.
-
-Realistic vegetation when appropriate.
-
-Realistic objects.
-
-Realistic people when appropriate.
-
-Natural human proportions.
-
-Natural lighting.
-
-Beautiful daylight.
-
-Soft sunlight.
-
-Realistic shadows.
-
-Subtle atmospheric depth.
-
-Natural color grading.
-
-Sophisticated composition.
-
-Modern elegant appearance.
-
-Trustworthy atmosphere.
-
-Welcoming atmosphere.
-
-Authentic environment.
-
-Avoid excessive fantasy.
-
-Avoid surrealism unless the application context
-clearly requires it.
-
-============================================================
-PEOPLE
-============================================================
-
-People may appear only when appropriate.
-
-People should normally be secondary environmental elements.
-
-They should support the context of the application.
-
-For example:
-
-- people using a relevant facility
-- people receiving a service
-- people working in the environment
-- people performing relevant activities
-
-Do NOT make one random person the main subject.
-
-Avoid:
-
-- exaggerated poses
-- unrealistic anatomy
-- distorted faces
-- duplicated people
-- unnatural hands
-
-============================================================
-VISUAL PRIORITY
-============================================================
-
-Priority order:
-
-1. Correctly represent the application/service.
-2. Create a believable real-world environment.
-3. Reflect the organization's visual identity subtly.
-4. Create premium commercial composition.
-5. Preserve clean space for application branding overlay.
-
-The semantic meaning of the scene is MORE IMPORTANT
-than making the image simply beautiful.
-
-============================================================
-FINAL RESULT
-============================================================
-
-Generate ONLY ONE environmental artwork.
-
-The artwork must look like a premium,
-high-quality vertical commercial photograph.
-
-It must visually communicate the purpose
-of the application and organization.
-
-It must NOT contain:
-
-- text
-- letters
-- numbers
-- logos
-- fake branding
-- UI
-- application interface
-- watermark
-- typography
-
-The organization logo must NOT appear in the generated image.
-
-The logo is ONLY used as a visual reference
-for understanding organizational identity.
-
-Aspect ratio: 9:16.
-
-IMPORTANT FINAL INSTRUCTION:
-
-Do not explain your reasoning.
-
-Do not output text.
-
-Only generate the final environmental image.
+This is ONLY the visual artwork.
+ABSOLUTE NO TEXT OF ANY KIND.
+Do not generate: application names, signs, logos, letters, numbers, typography.
+The final image must contain ZERO readable or pseudo-readable text.
+
+COMPOSITION:
+Vertical 9:16.
+Single main subject should occupy the middle and lower area.
+Keep the upper area visually clean and natural.
+
+STYLE:
+Photorealistic. Premium commercial photography. Cinematic natural lighting. Highly detailed. Perfect anatomical correctness.
 `;
 };
 
 /**
  * ============================================================
- * Utility
+ * 4. Negative Prompt (ข้อห้ามของ AI)
  * ============================================================
  */
-
-const sleep = async (
-  ms: number
-): Promise<void> => {
-  await new Promise<void>((resolve) =>
-    setTimeout(resolve, ms)
-  );
+const buildNegativePrompt = () => {
+  // เพิ่มข้อห้ามเรื่องสรีระเพี้ยน (mutated, deformed, extra limbs...)
+  return `text, writing, letters, words, numbers, typography, label, title, sign, logo, brand, watermark, smartphone, device, screen, UI, mutated, deformed, extra limbs, bad anatomy, weird proportions, two heads, multiple bodies, disfigured, surreal, unnatural body, overlapping bodies`;
 };
 
 /**
  * ============================================================
- * Convert Data URL → Blob
+ * 5. ติดต่อ deAPI เพื่อสร้างรูปพื้นหลัง
  * ============================================================
  */
+const generateWithDeApi = async (appNameTH: string, appNameEN: string) => {
+  const apiKey = process.env.DEAPI_API_KEY;
+  const model = process.env.DEAPI_IMAGE_MODEL || 'Flux_2_Klein_4B_BF16';
 
-const dataUrlToBlob = async (
-  dataUrl: string
-): Promise<Blob> => {
-  if (!dataUrl.startsWith('data:')) {
-    throw new Error(
-      'รูปโลโก้ต้องเป็น Data URL'
-    );
-  }
+  if (!apiKey) throw new Error('DEAPI_API_KEY_MISSING');
 
-  const response = await fetch(dataUrl);
+  const visualContext = inferVisualContext(appNameTH, appNameEN);
+  const prompt = buildImagePrompt(visualContext);
+  const negativePrompt = buildNegativePrompt();
+
+  const response = await fetch('https://api.deapi.ai/api/v2/images/generations', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      negative_prompt: negativePrompt,
+      width: 768,
+      height: 1344,
+      steps: 4,
+      seed: -1,
+    }),
+  });
 
   if (!response.ok) {
-    throw new Error(
-      'ไม่สามารถอ่านไฟล์โลโก้ได้'
-    );
+    const errorText = await response.text();
+    throw new Error(`deAPI image generation failed: ${errorText}`);
   }
 
-  return await response.blob();
+  const data = await response.json();
+  const requestId = data?.data?.request_id || data?.request_id;
+
+  if (!requestId) throw new Error('deAPI ไม่ได้ส่ง request_id กลับมา');
+
+  const maxAttempts = 60;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const jobResponse = await fetch(`https://api.deapi.ai/api/v2/jobs/${requestId}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!jobResponse.ok) continue;
+
+    const jobData = await jobResponse.json();
+    const job = jobData?.data || jobData;
+
+    if (!job) continue;
+
+    if (job.status === 'done') {
+      const resultUrl = job.result_url || job.result || job.results_alt_formats?.png || job.results_alt_formats?.jpg;
+      if (!resultUrl) throw new Error('สร้างภาพเสร็จแล้วแต่ไม่พบ URL รูปภาพ');
+
+      const imageResponse = await fetch(resultUrl, { cache: 'no-store' });
+      if (!imageResponse.ok) throw new Error('ดาวน์โหลดภาพจาก deAPI ไม่สำเร็จ');
+
+      const contentType = imageResponse.headers.get('content-type') || 'image/png';
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+      return `data:${contentType};base64,${base64}`;
+    }
+
+    if (job.status === 'error' || job.status === 'failed') {
+      throw new Error(job.error || job.message || 'AI สร้างภาพไม่สำเร็จ');
+    }
+  }
+
+  throw new Error('AI ใช้เวลาสร้างภาพนานเกินกำหนด กรุณาลองใหม่อีกครั้ง');
 };
 
 /**
  * ============================================================
- * Submit deAPI Image Generation Job
+ * 6. ประกอบภาพ (ส่งแค่ฉากหลัง ไม่ใส่ข้อความซ้อน)
  * ============================================================
  */
+const buildFinalArtwork = (aiImage: string) => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="768" height="1344" viewBox="0 0 768 1344">
+      <defs>
+        <linearGradient id="topGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#000000" stop-opacity="0.50" />
+          <stop offset="45%" stop-color="#000000" stop-opacity="0.16" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="bottomGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#000000" stop-opacity="0" />
+          <stop offset="100%" stop-color="#000000" stop-opacity="0.40" />
+        </linearGradient>
+      </defs>
 
-const submitDeApiJob = async (
-  appNameTH: string,
-  appNameEN: string,
-  orgLogo: string
-) => {
-  const apiKey =
-    process.env.DEAPI_API_KEY;
+      <image href="${aiImage}" x="0" y="0" width="768" height="1344" preserveAspectRatio="xMidYMid slice" />
+      <rect x="0" y="0" width="768" height="360" fill="url(#topGradient)" />
+      <rect x="0" y="950" width="768" height="394" fill="url(#bottomGradient)" />
+      <rect x="3" y="3" width="762" height="1338" rx="38" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6" />
+    </svg>
+  `;
 
-  if (!apiKey) {
-    throw new Error(
-      'DEAPI_API_KEY_MISSING'
-    );
-  }
-
-  const logoBlob =
-    await dataUrlToBlob(orgLogo);
-
-  if (
-    logoBlob.size >
-    10 * 1024 * 1024
-  ) {
-    throw new Error(
-      'โลโก้มีขนาดใหญ่เกิน 10 MB'
-    );
-  }
-
-  const prompt =
-    buildImagePrompt(
-      appNameTH,
-      appNameEN
-    );
-
-  /**
-   * ----------------------------------------------------------
-   * Retry Loop
-   * ----------------------------------------------------------
-   *
-   * สำคัญ:
-   * FormData ใหม่ทุกครั้ง
-   * เพราะ request body ไม่ควรถูก reuse หลังจาก fetch
-   */
-
-  for (
-    let attempt = 0;
-    attempt <= DEAPI_RETRY_DELAYS.length;
-    attempt++
-  ) {
-    const formData =
-      new FormData();
-
-    formData.append(
-      'model',
-      DEAPI_MODEL
-    );
-
-    formData.append(
-      'prompt',
-      prompt
-    );
-
-    formData.append(
-      'width',
-      '768'
-    );
-
-    formData.append(
-      'height',
-      '1360'
-    );
-
-    formData.append(
-      'steps',
-      '4'
-    );
-
-    formData.append(
-      'seed',
-      '-1'
-    );
-
-    formData.append(
-      'image',
-      logoBlob,
-      'organization-logo.png'
-    );
-
-    console.log(
-      `deAPI image request attempt ${
-        attempt + 1
-      }/${DEAPI_RETRY_DELAYS.length + 1}`
-    );
-
-    const response =
-      await fetch(
-        DEAPI_IMAGE_EDIT_ENDPOINT,
-        {
-          method: 'POST',
-
-          headers: {
-            Authorization:
-              `Bearer ${apiKey}`,
-
-            Accept:
-              'application/json',
-          },
-
-          body:
-            formData,
-
-          cache:
-            'no-store',
-        }
-      );
-
-    const responseText =
-      await response.text();
-
-    let data: any = null;
-
-    try {
-      data =
-        JSON.parse(
-          responseText
-        );
-    } catch {
-      data = null;
-    }
-
-    /**
-     * --------------------------------------------------------
-     * SUCCESS
-     * --------------------------------------------------------
-     */
-
-    if (response.ok) {
-      const requestId =
-        data?.data?.request_id ||
-        data?.request_id;
-
-      if (!requestId) {
-        throw new Error(
-          'deAPI ไม่ได้ส่ง request_id กลับมา'
-        );
-      }
-
-      return requestId;
-    }
-
-    /**
-     * --------------------------------------------------------
-     * RATE LIMIT
-     * --------------------------------------------------------
-     */
-
-    if (
-      response.status === 429
-    ) {
-      const retryAfterHeader =
-        response.headers.get(
-          'retry-after'
-        );
-
-      let retryAfterMs =
-        DEAPI_RETRY_DELAYS[
-          attempt
-        ];
-
-      if (retryAfterHeader) {
-        const retryAfterSeconds =
-          Number(
-            retryAfterHeader
-          );
-
-        if (
-          Number.isFinite(
-            retryAfterSeconds
-          ) &&
-          retryAfterSeconds >= 0
-        ) {
-          retryAfterMs =
-            retryAfterSeconds * 1000;
-        }
-      }
-
-      /**
-       * ถ้ายังมี retry เหลือ
-       */
-
-      if (
-        attempt <
-        DEAPI_RETRY_DELAYS.length
-      ) {
-        console.warn(
-          `deAPI rate limited (429). Retrying in ${
-            Math.ceil(
-              retryAfterMs / 1000
-            )
-          } seconds...`
-        );
-
-        await sleep(
-          retryAfterMs
-        );
-
-        continue;
-      }
-
-      /**
-       * Retry ครบแล้ว
-       */
-
-      throw new Error(
-        'DEAPI_RATE_LIMITED'
-      );
-    }
-
-    /**
-     * --------------------------------------------------------
-     * Other API Errors
-     * --------------------------------------------------------
-     */
-
-    throw new Error(
-      `deAPI request failed (${response.status}): ${
-        data?.error ||
-        data?.message ||
-        responseText ||
-        'Unknown error'
-      }`
-    );
-  }
-
-  throw new Error(
-    'DEAPI_RATE_LIMITED'
-  );
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
 /**
  * ============================================================
- * Poll deAPI Job
+ * 7. Fallback (ส่งแค่ฉากหลัง ไม่ใส่ข้อความซ้อน)
  * ============================================================
  */
+const buildFallbackArtwork = () => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="768" height="1344" viewBox="0 0 768 1344">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#dff1ff" />
+          <stop offset="100%" stop-color="#8fc8ff" />
+        </linearGradient>
+        <linearGradient id="bottom" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+          <stop offset="100%" stop-color="#0c47a1" stop-opacity="0.35" />
+        </linearGradient>
+      </defs>
 
-const waitForDeApiResult = async (
-  requestId: string
-): Promise<string> => {
-  const apiKey =
-    process.env.DEAPI_API_KEY;
+      <rect width="768" height="1344" fill="url(#bg)" />
+      <circle cx="620" cy="220" r="240" fill="#ffffff" opacity="0.28" />
+      <circle cx="120" cy="960" r="280" fill="#ffffff" opacity="0.22" />
+      <circle cx="680" cy="880" r="160" fill="#b7dcff" opacity="0.4" />
+      <rect x="0" y="900" width="768" height="444" fill="url(#bottom)" />
+      <rect x="3" y="3" width="762" height="1338" rx="38" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="6" />
+    </svg>
+  `;
 
-  if (!apiKey) {
-    throw new Error(
-      'DEAPI_API_KEY_MISSING'
-    );
-  }
-
-  const maxAttempts =
-    60;
-
-  const pollInterval =
-    2000;
-
-  for (
-    let attempt = 0;
-    attempt < maxAttempts;
-    attempt++
-  ) {
-    const response =
-      await fetch(
-        `${DEAPI_JOB_ENDPOINT}/${requestId}`,
-        {
-          method: 'GET',
-
-          headers: {
-            Authorization:
-              `Bearer ${apiKey}`,
-
-            Accept:
-              'application/json',
-          },
-
-          cache:
-            'no-store',
-        }
-      );
-
-    const responseText =
-      await response.text();
-
-    let data: any = null;
-
-    try {
-      data =
-        JSON.parse(
-          responseText
-        );
-    } catch {
-      data = null;
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        `deAPI job check failed (${response.status}): ${
-          data?.error ||
-          data?.message ||
-          responseText ||
-          'Unknown error'
-        }`
-      );
-    }
-
-    const job =
-      data?.data ||
-      data;
-
-    const status =
-      job?.status;
-
-    console.log(
-      `deAPI job ${requestId}: ${status} (${job?.progress ?? 0}%)`
-    );
-
-    /**
-     * SUCCESS
-     */
-
-    if (
-      status === 'done'
-    ) {
-      const resultUrl =
-        job?.result_url ||
-        job?.result ||
-        job?.results_alt_formats?.png ||
-        job?.results_alt_formats?.jpg;
-
-      if (!resultUrl) {
-        throw new Error(
-          'deAPI สร้างภาพเสร็จแล้วแต่ไม่พบ result_url'
-        );
-      }
-
-      return resultUrl;
-    }
-
-    /**
-     * ERROR
-     */
-
-    if (
-      status === 'error' ||
-      status === 'failed'
-    ) {
-      throw new Error(
-        `deAPI image generation error: ${
-          job?.error ||
-          job?.message ||
-          'Unknown generation error'
-        }`
-      );
-    }
-
-    /**
-     * WAIT
-     */
-
-    await sleep(
-      pollInterval
-    );
-  }
-
-  throw new Error(
-    'deAPI ใช้เวลาสร้างภาพนานเกินกำหนด กรุณาลองใหม่อีกครั้ง'
-  );
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
 /**
  * ============================================================
- * Download Result → Data URL
+ * MAIN POST ROUTE
  * ============================================================
  */
-
-const downloadAsDataUrl = async (
-  imageUrl: string
-): Promise<string> => {
-  const response =
-    await fetch(
-      imageUrl
-    );
-
-  if (!response.ok) {
-    throw new Error(
-      'ไม่สามารถดาวน์โหลดภาพจาก deAPI ได้'
-    );
-  }
-
-  const contentType =
-    response.headers.get(
-      'content-type'
-    ) ||
-    'image/png';
-
-  const arrayBuffer =
-    await response.arrayBuffer();
-
-  const base64 =
-    Buffer
-      .from(arrayBuffer)
-      .toString('base64');
-
-  return `data:${contentType};base64,${base64}`;
-};
-
-/**
- * ============================================================
- * POST
- * ============================================================
- */
-
-export async function POST(
-  request: Request
-) {
+export async function POST(request: Request) {
   try {
-    const body =
-      await request.json();
+    const body = await request.json();
+    const appNameTH = typeof body.appNameTH === 'string' ? body.appNameTH.trim() : '';
+    const appNameEN = typeof body.appNameEN === 'string' ? body.appNameEN.trim() : '';
 
-    const appNameTH =
-      typeof body.appNameTH === 'string'
-        ? body.appNameTH.trim()
-        : '';
-
-    const appNameEN =
-      typeof body.appNameEN === 'string'
-        ? body.appNameEN.trim()
-        : '';
-
-    const orgLogo =
-      typeof body.orgLogo === 'string'
-        ? body.orgLogo.trim()
-        : '';
-
-    /**
-     * ========================================================
-     * VALIDATION
-     * ========================================================
-     */
-
-    if (
-      !appNameTH &&
-      !appNameEN
-    ) {
+    if (!appNameTH && !appNameEN) {
       return NextResponse.json(
-        {
-          error:
-            'กรุณาใส่ชื่อแอปก่อนสร้างภาพ',
-        },
-        {
-          status: 400,
-        }
+        { error: 'กรุณาใส่ชื่อแอปก่อนสร้างภาพ' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
       );
     }
 
-    if (!orgLogo) {
-      return NextResponse.json(
-        {
-          error:
-            'กรุณาอัปโหลดโลโก้องค์กรก่อนสร้างภาพ',
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+    try {
+      const aiBackgroundImage = await generateWithDeApi(appNameTH, appNameEN);
 
-    /**
-     * ========================================================
-     * STEP 1
-     * ========================================================
-     */
-
-    const requestId =
-      await submitDeApiJob(
-        appNameTH,
-        appNameEN,
-        orgLogo
-      );
-
-    console.log(
-      'deAPI request ID:',
-      requestId
-    );
-
-    /**
-     * ========================================================
-     * STEP 2
-     * ========================================================
-     */
-
-    const resultUrl =
-      await waitForDeApiResult(
-        requestId
-      );
-
-    /**
-     * ========================================================
-     * STEP 3
-     * ========================================================
-     */
-
-    const imageDataUrl =
-      await downloadAsDataUrl(
-        resultUrl
-      );
-
-    /**
-     * ========================================================
-     * RETURN
-     * ========================================================
-     */
-
-    return NextResponse.json(
-      {
-        result:
-          imageDataUrl,
-
-        source:
-          'deapi-image-to-image',
-
-        requestId,
+      if (aiBackgroundImage) {
+        const finalArtwork = buildFinalArtwork(aiBackgroundImage);
+        return NextResponse.json(
+          { result: finalArtwork, source: 'deapi-text-to-image' },
+          { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', Pragma: 'no-cache' } }
+        );
       }
-    );
-  } catch (
-    error: any
-  ) {
-    console.error(
-      'deAPI Generate route error:',
-      error
-    );
+    } catch (deApiError) {
+      console.error('deAPI generate failed, fallback to local artwork:', deApiError);
 
-    /**
-     * ========================================================
-     * API KEY ERROR
-     * ========================================================
-     */
-
-    if (
-      error?.message ===
-      'DEAPI_API_KEY_MISSING'
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            'ยังไม่ได้ใส่ DEAPI_API_KEY ในไฟล์ .env.local',
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    /**
-     * ========================================================
-     * RATE LIMIT ERROR
-     * ========================================================
-     */
-
-    if (
-      error?.message ===
-      'DEAPI_RATE_LIMITED'
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            'deAPI กำลังจำกัดจำนวนการใช้งานชั่วคราว (429 Too Many Attempts) กรุณารอสักครู่แล้วลองใหม่อีกครั้ง',
-        },
-        {
-          status: 429,
-        }
-      );
-    }
-
-    /**
-     * ========================================================
-     * GENERAL ERROR
-     * ========================================================
-     */
-
-    return NextResponse.json(
-      {
-        error:
-          `AI Error: ${
-            error?.message ||
-            'ไม่ทราบสาเหตุ'
-          }`,
-      },
-      {
-        status: 500,
+      if (deApiError instanceof Error && deApiError.message === 'DEAPI_API_KEY_MISSING') {
+        return NextResponse.json(
+          { error: 'ยังไม่ได้ใส่ DEAPI_API_KEY ในไฟล์ .env.local' },
+          { status: 500 }
+        );
       }
+    }
+
+    const fallback = buildFallbackArtwork();
+    return NextResponse.json(
+      { result: fallback, source: 'local-svg-fallback' },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', Pragma: 'no-cache' } }
+    );
+
+  } catch (error: any) {
+    console.error('Generate route error:', error);
+    return NextResponse.json(
+      { error: `AI Error: ${error?.message || 'ไม่ทราบสาเหตุ'}` },
+      { status: 500, headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' } }
     );
   }
 }
