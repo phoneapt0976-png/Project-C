@@ -1367,7 +1367,7 @@ export default function MiniAppForm() {
               <p className="mt-4 text-sm sm:text-base text-gray-500 leading-relaxed max-w-2xl">
                 กรอกข้อมูลเพียงไม่กี่ขั้นตอน
                 ระบบจะสร้างภาพตัวอย่าง MiniApp
-                พร้อมภาพประกอบ AI
+                พร้อมภาพประกอบ
                 ให้พร้อมใช้งานและดาวน์โหลด
               </p>
             </div>
