@@ -664,8 +664,11 @@ export default function MiniAppForm() {
     };
 
   const createImageWithCanvas = async (element: HTMLElement): Promise<string> => {
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const renderRatio = isMobile ? 1.5 : 3;
+    // ใช้ความละเอียดเดียวกันทั้ง Desktop และ Mobile
+    // หน้าจอ Preview = 360 × 640
+    // pixelRatio = 3 จะได้ไฟล์จริง = 1080 × 1920
+    // จึงไม่ลดเหลือ 540 × 960 บนมือถืออีกต่อไป
+    const renderRatio = 3;
 
     await waitForImages(element);
     await waitForFonts();
@@ -681,13 +684,6 @@ export default function MiniAppForm() {
         transform: 'none',
       },
     };
-
-    if (isMobile) {
-      try {
-        await toPng(element, options);
-      } catch (e) {
-      }
-    }
 
     return await toPng(element, options);
   };
@@ -731,12 +727,7 @@ export default function MiniAppForm() {
       const element =
         ref.current;
 
-      const isMobile =
-        /Android|iPhone|iPad|iPod/i.test(
-          navigator.userAgent
-        );
-
-      try {
+        try {
         setIsDownloading(
           true
         );
@@ -771,7 +762,7 @@ export default function MiniAppForm() {
             dataUrl
           );
 
-        if (isMobile && navigator.share) {
+        if (navigator.share) {
           const file = new File([blob], filename, { type: 'image/png' });
           try {
             await navigator.share({
