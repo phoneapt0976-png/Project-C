@@ -954,8 +954,7 @@ export default function MiniAppForm() {
                           titleTextShadow,
                       }}
                     >
-                      {appNameTH ||
-                        'ชื่อแอปพลิเคชัน'}
+                      {appNameTH}
                     </h1>
                     <h2
                       className="text-[18px] font-semibold leading-[1.15] mt-1 break-words"
@@ -971,8 +970,7 @@ export default function MiniAppForm() {
                           titleTextShadow,
                       }}
                     >
-                      {appNameEN ||
-                        'Name App'}
+                      {appNameEN}
                     </h2>
                   </div>
                 </div>
@@ -1210,129 +1208,34 @@ export default function MiniAppForm() {
               <div
                 className="absolute top-[120px] left-[28px] right-[28px] bottom-[100px] z-20 overflow-hidden"
               >
-                <div className="mb-3">
-                  <h2
-                    className="font-bold text-[24px] leading-tight"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 3px 8px rgba(0,0,0,0.95)',
-                    }}
-                  >
-                    {headerService ||
-                      'บริการจำหน่ายอุปกรณ์ตกปลา'}
-                  </h2>
-                </div>
-                <div className="mb-3">
-                  <p
-                    className="font-semibold text-[17px] leading-[1.45]"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 6px rgba(0,0,0,0.85)',
-                    }}
-                  >
-                    เลือกซื้อสินค้าได้ง่าย
-                    <br />
-                    สะดวก ครบ จบในที่เดียว
-                  </p>
-                </div>
-                <div className="mb-2">
-                  <h3
-                    className="font-bold text-[21px] leading-[1.25]"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 7px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    บริการที่สามารถทำได้บน
-                    <br />
-                    แพลตฟอร์ม
-                  </h3>
-                </div>
-                <div className="mb-3">
-                  <p
-                    className="text-[15px] leading-[1.5]"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 7px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    {detail1 ||
-                      'เลือกซื้ออุปกรณ์ตกปลาและสินค้าที่เกี่ยวข้องได้ง่าย ครบ จบในร้านเดียว สามารถค้นหาสินค้า เลือกดูคันเบ็ด รอก เหยื่อ และอุปกรณ์ตกปลาได้อย่างสะดวก พร้อมรายละเอียดสินค้าและข้อมูลที่ช่วยให้ตัดสินใจเลือกซื้อออนไลน์ได้ง่ายดาย'}
-                  </p>
-                </div>
-                <div className="mb-3 pb-2">
-                  <h4
-                    className="font-bold text-[17px] mb-1"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 6px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    เลือกซื้อสินค้า
-                  </h4>
-                  <p
-                    className="text-[13px] leading-[1.4]"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 5px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    ค้นหาอุปกรณ์ที่ต้องการได้ง่าย
-                  </p>
-                </div>
-                <div className="pb-2">
-                  <h4
-                    className="font-bold text-[17px] mb-1"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 6px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    ดูรายละเอียดสินค้า
-                  </h4>
-                  <p
-                    className="text-[13px] leading-[1.4]"
-                    style={{
-                      color:
-                        '#ffffff',
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                      textShadow:
-                        '0 2px 5px rgba(0,0,0,0.9)',
-                    }}
-                  >
-                    ตรวจสอบข้อมูลสินค้า
-                    ก่อนสั่งซื้อ
-                  </p>
-                </div>
+                {headerService && (
+                  <div className="mb-4">
+                    <h2
+                      className="font-bold text-[24px] leading-tight"
+                      style={{
+                        color: '#ffffff',
+                        fontFamily: 'Anuphan, sans-serif',
+                        textShadow: '0 3px 8px rgba(0,0,0,0.95)',
+                      }}
+                    >
+                      {headerService}
+                    </h2>
+                  </div>
+                )}
+                {detail1 && (
+                  <div className="mb-3">
+                    <p
+                      className="text-[15px] leading-[1.6]"
+                      style={{
+                        color: '#ffffff',
+                        fontFamily: 'Anuphan, sans-serif',
+                        textShadow: '0 2px 7px rgba(0,0,0,0.9)',
+                      }}
+                    >
+                      {detail1}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div
@@ -1760,7 +1663,7 @@ export default function MiniAppForm() {
               </div>
               <div className="p-5 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <label className="group relative w-52 h-[350px] bg-gray-50 rounded-[2rem] flex flex-col items-center justify-center text-blue-500 transition cursor-pointer overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/40">
+                  <label className="group relative w-52 h-[350px] bg-gray-50 rounded-[2rem] flex flex-col items-center justify-center text-blue-50 transition cursor-pointer overflow-hidden border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/40">
                     <input
                       type="file"
                       accept="image/*"
@@ -2049,12 +1952,10 @@ export default function MiniAppForm() {
                         Application
                       </div>
                       <div className="text-sm font-bold text-gray-800 truncate mt-0.5">
-                        {appNameTH ||
-                          'ชื่อแอปพลิเคชัน'}
+                        {appNameTH || ''}
                       </div>
                       <div className="text-[11px] text-gray-400 truncate">
-                        {appNameEN ||
-                          'Application Name'}
+                        {appNameEN || ''}
                       </div>
                     </div>
                   </div>
