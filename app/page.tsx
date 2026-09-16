@@ -31,8 +31,6 @@ export default function MiniAppForm() {
   );
 
   const screen1Ref = useRef<HTMLDivElement>(null);
-  const screen2Ref = useRef<HTMLDivElement>(null);
-  const screen3Ref = useRef<HTMLDivElement>(null);
 
   const analyzeImageTextColor = async (
     imageSrc: string
@@ -664,10 +662,7 @@ export default function MiniAppForm() {
     };
 
   const createImageWithCanvas = async (element: HTMLElement): Promise<string> => {
-    // ใช้ความละเอียดเดียวกันทั้ง Desktop และ Mobile
-    // หน้าจอ Preview = 360 × 640
-    // pixelRatio = 3 จะได้ไฟล์จริง = 1080 × 1920
-    // จึงไม่ลดเหลือ 540 × 960 บนมือถืออีกต่อไป
+    // ใช้ pixelRatio 3 เสมอเพื่อให้ภาพคมชัดระดับ 1080x1920
     const renderRatio = 3;
 
     await waitForImages(element);
@@ -727,7 +722,7 @@ export default function MiniAppForm() {
       const element =
         ref.current;
 
-        try {
+      try {
         setIsDownloading(
           true
         );
@@ -738,11 +733,12 @@ export default function MiniAppForm() {
 
         await waitForFonts();
 
+        // เพิ่มระยะเวลารอเพื่อให้แน่ใจว่าฟอนต์และรูปภาพถูกเรนเดอร์ครบถ้วน
         await new Promise<void>(
           (resolve) =>
             setTimeout(
               resolve,
-              500
+              1500
             )
         );
 
@@ -852,7 +848,7 @@ export default function MiniAppForm() {
   if (showPreview) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 sm:p-8 font-sans text-gray-700 flex flex-col items-center overflow-x-auto">
-        <div className="w-full max-w-6xl mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div className="w-full max-w-2xl mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
           <h1 className="text-2xl font-bold text-center sm:text-left">
             ตัวอย่างรูปภาพ (พร้อมดาวน์โหลด)
           </h1>
@@ -866,294 +862,16 @@ export default function MiniAppForm() {
           </button>
         </div>
 
-        <div className="w-full max-w-6xl flex flex-wrap justify-center gap-8">
+        <div className="w-full max-w-2xl flex flex-col items-center gap-8">
           <div className="flex flex-col items-center">
             <div
               ref={screen1Ref}
-              className="relative overflow-hidden bg-black"
+              className="relative overflow-hidden bg-white"
               style={{
                 width: '360px',
                 height: '640px',
                 fontFamily:
                   'Anuphan, sans-serif',
-              }}
-            >
-              {appLogo ? (
-                <img
-                  src={appLogo}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  alt="AI generated illustration"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                  <span className="text-gray-400 text-sm">
-                    ภาพประกอบ AI
-                  </span>
-                </div>
-              )}
-
-              <div
-                className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
-                style={{
-                  height: '190px',
-                  background:
-                    titleTextColor ===
-                    '#ffffff'
-                      ? 'linear-gradient(to bottom, rgba(0,0,0,0.72), rgba(0,0,0,0.28), transparent)'
-                      : 'linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0.15), transparent)',
-                }}
-              />
-
-              <div className="absolute top-5 left-4 right-4 z-20">
-                <div className="flex items-start gap-3">
-                  <div className="w-[55px] h-[62px] flex-shrink-0 flex items-center justify-center">
-                    {orgLogo ? (
-                      <img
-                        src={orgLogo}
-                        className="w-full h-full object-contain"
-                        alt="Org Logo"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center text-white text-[8px] font-bold rounded"
-                        style={{
-                          backgroundColor:
-                            themeColor,
-                        }}
-                      >
-                        LOGO
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="min-w-0 flex-1 pt-0.5"
-                    style={{
-                      fontFamily:
-                        'Anuphan, sans-serif',
-                    }}
-                  >
-                    <h1
-                      className="text-[29px] font-bold leading-[1.05] break-words"
-                      style={{
-                        color:
-                          titleTextColor,
-                        fontFamily:
-                          'Anuphan, sans-serif',
-                        letterSpacing:
-                          '-0.5px',
-                        textShadow:
-                          titleTextShadow,
-                      }}
-                    >
-                      {appNameTH}
-                    </h1>
-                    <h2
-                      className="text-[18px] font-semibold leading-[1.15] mt-1 break-words"
-                      style={{
-                        color:
-                          titleTextColor,
-                        opacity: 0.92,
-                        fontFamily:
-                          'Anuphan, sans-serif',
-                        letterSpacing:
-                          '0.2px',
-                        textShadow:
-                          titleTextShadow,
-                      }}
-                    >
-                      {appNameEN}
-                    </h2>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
-                style={{
-                  height: '230px',
-                  background:
-                    'linear-gradient(to top, rgba(0,0,0,0.50), transparent)',
-                }}
-              />
-
-              <div
-                className="absolute bottom-0 left-0 right-0 z-30 h-[115px] px-3 py-2 flex items-center justify-between flex-shrink-0"
-                style={{
-                  backgroundColor:
-                    themeColor,
-                }}
-              >
-                <div className="w-[72px] h-[72px] bg-white rounded-2xl flex items-center justify-center relative shadow-sm flex-shrink-0 overflow-hidden">
-                  <img
-                    src="/unnamed.png"
-                    className="w-full h-full object-contain"
-                    alt="ทางรัฐ"
-                  />
-                </div>
-
-                <div className="w-[72px] h-[72px] bg-white rounded-lg p-1 flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
-                  {qrCode ? (
-                    <img
-                      src={qrCode}
-                      className="w-full h-full object-cover rounded"
-                      alt="QR Code"
-                    />
-                  ) : (
-                    <div className="w-full h-full border-2 border-dashed border-gray-400 flex flex-col items-center justify-center rounded bg-gray-50">
-                      <span className="text-[10px] font-bold text-gray-500">
-                        QR DGA
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 flex flex-col items-center justify-center ml-1">
-                  <div className="bg-white px-2 py-0.5 rounded-md shadow-sm mb-1 flex items-baseline justify-center">
-                    <span className="text-black font-black text-[15px] tracking-tight">
-                      ทางลัด
-                    </span>
-                    <span className="text-gray-500 text-[10px] mx-1">
-                      ถึง
-                    </span>
-                    <span className="text-black font-black text-[15px] tracking-tight">
-                      รัฐ
-                    </span>
-                  </div>
-                  <div className="text-white text-[10px] font-bold mb-1 tracking-wider">
-                    ช่องทางเดียว
-                  </div>
-                  <div className="text-white font-bold text-[11px] mb-1.5 flex gap-1">
-                    <span>
-                      ง่าย
-                    </span>
-                    <span className="text-red-400">
-                      จบ
-                    </span>
-                    <span className="text-green-300">
-                      ครบทุกช่วงวัย
-                    </span>
-                  </div>
-                  <div className="flex gap-1">
-                    <div className="w-[52px] h-[16px] bg-black rounded-[4px] flex items-center justify-center text-[5px] text-white font-bold border border-white/30">
-                      Google play
-                    </div>
-                    <div className="w-[52px] h-[16px] bg-black rounded-[4px] flex items-center justify-center text-[5px] text-white font-bold border border-white/30">
-                      App Store
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button
-              disabled={
-                isDownloading
-              }
-              onClick={() =>
-                downloadScreen(
-                  screen1Ref,
-                  `${
-                    appNameEN ||
-                    'miniapp'
-                  }-screen1.png`
-                )
-              }
-              className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-6 rounded-full text-sm font-bold shadow-md transition cursor-pointer disabled:cursor-not-allowed"
-            >
-              {isDownloading
-                ? 'กำลังสร้างภาพ...'
-                : '↓ โหลดภาพส่วนที่ 1'}
-            </button>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div
-              className="relative overflow-hidden"
-              style={{
-                backgroundImage:
-                  'linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)',
-                backgroundSize: '20px 20px',
-                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-                backgroundColor: '#ffffff',
-              }}
-            >
-              <div
-                ref={screen2Ref}
-                className="relative overflow-hidden flex flex-col items-center justify-center"
-                style={{
-                  width: '360px',
-                  height: '640px',
-                  background: 'transparent',
-                }}
-              >
-                <div className="w-[280px] h-[560px] bg-[#1a1a1a] rounded-[2.5rem] p-2 shadow-xl relative">
-                  <div className="w-full h-full bg-white rounded-[2rem] overflow-hidden flex items-center justify-center relative">
-                    <div
-                      className="absolute top-0 left-1/2 -translate-x-1/2 z-30 bg-[#1a1a1a]"
-                      style={{
-                        width: '130px',
-                        height: '16px',
-                        borderRadius:
-                          '0 0 12px 12px',
-                      }}
-                    >
-                      <div
-                        className="absolute left-1/2 top-[5px] -translate-x-1/2"
-                        style={{
-                          width: '34px',
-                          height: '3px',
-                          borderRadius: '999px',
-                          backgroundColor:
-                            '#333333',
-                        }}
-                      />
-                    </div>
-                    {screenshot ? (
-                      <img
-                        src={screenshot}
-                        className="w-full h-full object-cover"
-                        alt="Screenshot"
-                      />
-                    ) : (
-                      <span className="text-gray-400">
-                        ภาพแคปหน้าจอ
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button
-              disabled={
-                isDownloading
-              }
-              onClick={() =>
-                downloadScreen(
-                  screen2Ref,
-                  `${
-                    appNameEN ||
-                    'miniapp'
-                  }-screen2.png`
-                )
-              }
-              className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-6 rounded-full text-sm font-bold shadow-md transition cursor-pointer disabled:cursor-not-allowed"
-            >
-              {isDownloading
-                ? 'กำลังสร้างภาพ...'
-                : '↓ โหลดภาพส่วนที่ 2'}
-            </button>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div
-              ref={screen3Ref}
-              className="relative overflow-hidden"
-              style={{
-                width: '360px',
-                height: '640px',
-                fontFamily:
-                  'Anuphan, sans-serif',
-                backgroundColor:
-                  '#111827',
               }}
             >
               {appLogo ? (
@@ -1229,16 +947,27 @@ export default function MiniAppForm() {
                 )}
               </div>
 
+              {/* White footer section, recreated to include all elements as seen in image_0.png */}
               <div
-                className="absolute bottom-0 left-0 right-0 z-50"
+                className="absolute bottom-0 left-0 right-0 z-50 p-4 bg-white"
                 style={{
-                  height: '88px',
-                  background:
-                    '#ffffff',
+                  height: '110px',
                 }}
               >
-                <div className="absolute inset-0 flex items-center justify-center px-4">
-                  <div className="w-full flex items-center justify-around">
+                <div className="flex flex-col items-center justify-between h-full">
+                  {/* Partner tag and app generator tag above the logo section */}
+                  <div className="flex items-center gap-3 w-full">
+                    {/* Add back MiniApp Design Generator tag as in image_0.png */}
+                    <div className="px-2 py-0.5 rounded-md bg-blue-100/70 border border-blue-200">
+                      <p className="text-blue-700 text-[10px] font-bold">
+                        MiniApp Design Generator
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Redesigned logic for the single screen based on image_0.png */}
+                  <div className="w-full flex items-center justify-around mt-1">
+                    {/* Foot Logo or fallback placeholder */}
                     <div className="w-[72px] h-[58px] flex items-center justify-center">
                       {footerLogo ? (
                         <img
@@ -1258,12 +987,13 @@ export default function MiniAppForm() {
                         </div>
                       )}
                     </div>
+                    {/* DGA branding section */}
                     <div className="w-[78px] flex flex-col items-center justify-center">
                       <div
                         className="font-black text-[25px] leading-none tracking-[-2px]"
                         style={{
                           color:
-                            themeColor,
+                            '#1E3A8A', // Dark blue text as seen in screenshot
                           fontFamily:
                             'Arial, sans-serif',
                         }}
@@ -1282,9 +1012,10 @@ export default function MiniAppForm() {
                         สำนักงานพัฒนารัฐบาลดิจิทัล
                       </div>
                     </div>
+                    {/* TangRat app branding */}
                     <div className="w-[78px] h-[58px] flex items-center justify-center">
                       <img
-                        src="/unnamed.png"
+                        src="/unnamed.png" // Path must be correct for image to load
                         className="max-w-full max-h-full object-contain"
                         alt="ทางรัฐ"
                       />
@@ -1299,18 +1030,18 @@ export default function MiniAppForm() {
               }
               onClick={() =>
                 downloadScreen(
-                  screen3Ref,
+                  screen1Ref,
                   `${
                     appNameEN ||
                     'miniapp'
-                  }-screen3.png`
+                  }.png`
                 )
               }
               className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-6 rounded-full text-sm font-bold shadow-md transition cursor-pointer disabled:cursor-not-allowed"
             >
               {isDownloading
                 ? 'กำลังสร้างภาพ...'
-                : '↓ โหลดภาพส่วนที่ 3'}
+                : '↓ ดาวน์โหลดรูปภาพ'}
             </button>
           </div>
         </div>
@@ -1318,6 +1049,7 @@ export default function MiniAppForm() {
     );
   }
 
+  // Render original form section
   return (
     <div
       className="min-h-screen text-gray-800"
@@ -1358,7 +1090,7 @@ export default function MiniAppForm() {
               <p className="mt-4 text-sm sm:text-base text-gray-500 leading-relaxed max-w-2xl">
                 กรอกข้อมูลเพียงไม่กี่ขั้นตอน
                 ระบบจะสร้างภาพตัวอย่าง MiniApp
-                พร้อมภาพประกอบ
+                พร้อมภาพประกอบ AI
                 ให้พร้อมใช้งานและดาวน์โหลด
               </p>
             </div>
@@ -1493,7 +1225,7 @@ export default function MiniAppForm() {
                     }}
                   >
                     1
-                  </div>
+                    </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">
                       ข้อมูล MiniApp
