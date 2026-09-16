@@ -1352,18 +1352,6 @@ export default function MiniAppForm() {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-blue-100 shadow-sm mb-4">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    backgroundColor:
-                      themeColor,
-                  }}
-                />
-                <span className="text-xs sm:text-sm font-semibold text-gray-600">
-                  MiniApp Design Generator
-                </span>
-              </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 leading-tight">
                 สร้าง Screenshot
                 <br />

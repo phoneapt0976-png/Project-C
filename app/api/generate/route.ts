@@ -31,7 +31,7 @@ const inferVisualContext = (
   if (text.match(/รถยนต์|รถเก๋ง|รถมือสอง|เต็นท์รถ|car|automotive|vehicle/)) {
     return 'premium modern automotive dealership environment';
   }
-  // ✨ เพิ่มคีย์เวิร์ดสัตว์เจาะจงลงไป เพื่อไม่ให้มันหลุดไปหมวดออฟฟิศ
+  // ✨ คีย์เวิร์ดสัตว์เจาะจง
   if (text.match(/สัตว์|สวนสัตว์|zoo|animal|เสือ|tiger|แมว|cat|หมา|สุนัข|dog|นก|bird|ปลา|fish/)) {
     const animalName = appNameEN || 'magnificent animal';
     return `beautiful realistic wildlife sanctuary with ONLY ONE ${animalName} walking towards the camera in a lush tropical forest, perfect animal anatomy, natural animal habitat`;
@@ -79,7 +79,7 @@ const inferVisualContext = (
     return 'premium modern technology business environment';
   }
 
-  // ✨ ไม้ตาย: ถ้าพิมพ์คำแปลกๆ ให้เอาคำนั้นไปสั่งวาดตรงๆ จะได้ไม่โผล่มาเป็นคนใส่สูทอีก
+  // ✨ ไม้ตาย: ถ้าพิมพ์คำแปลกๆ ให้เอาคำนั้นไปสั่งวาดตรงๆ
   const fallbackSubject = appNameEN || appNameTH || 'modern business';
   return `premium realistic environment representing the concept of "${fallbackSubject}"`;
 };
@@ -121,7 +121,6 @@ Photorealistic. Premium commercial photography. Cinematic natural lighting. High
  * ============================================================
  */
 const buildNegativePrompt = () => {
-  // สั่งห้ามวาดหนุ่มออฟฟิศหรือคนใส่สูทเผื่อไว้ด้วย
   return `text, writing, letters, words, numbers, typography, label, title, sign, logo, brand, watermark, smartphone, device, screen, UI, mutated, deformed, extra limbs, bad anatomy, weird proportions, two heads, multiple bodies, disfigured, surreal, unnatural body, overlapping bodies, office worker, businessman, suit`;
 };
 
@@ -235,7 +234,7 @@ const generateWithDeApi = async (appNameTH: string, appNameEN: string) => {
 
 /**
  * ============================================================
- * 6. ประกอบภาพ (ส่งแค่ฉากหลัง ไม่ใส่ข้อความซ้อน)
+ * 6. ประกอบภาพ (ส่งแค่ฉากหลัง ไม่ใส่ข้อความซ้อน และลบกรอบขาว)
  * ============================================================
  */
 const buildFinalArtwork = (aiImage: string) => {
@@ -256,7 +255,6 @@ const buildFinalArtwork = (aiImage: string) => {
       <image href="${aiImage}" x="0" y="0" width="768" height="1344" preserveAspectRatio="xMidYMid slice" />
       <rect x="0" y="0" width="768" height="360" fill="url(#topGradient)" />
       <rect x="0" y="950" width="768" height="394" fill="url(#bottomGradient)" />
-      <rect x="3" y="3" width="762" height="1338" rx="38" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6" />
     </svg>
   `;
 
@@ -265,7 +263,7 @@ const buildFinalArtwork = (aiImage: string) => {
 
 /**
  * ============================================================
- * 7. Fallback (ส่งแค่ฉากหลัง ไม่ใส่ข้อความซ้อน)
+ * 7. Fallback (ส่งแค่ฉากหลัง ไม่ใส่ข้อความซ้อน และลบกรอบขาว)
  * ============================================================
  */
 const buildFallbackArtwork = () => {
@@ -287,7 +285,6 @@ const buildFallbackArtwork = () => {
       <circle cx="120" cy="960" r="280" fill="#ffffff" opacity="0.22" />
       <circle cx="680" cy="880" r="160" fill="#b7dcff" opacity="0.4" />
       <rect x="0" y="900" width="768" height="444" fill="url(#bottom)" />
-      <rect x="3" y="3" width="762" height="1338" rx="38" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="6" />
     </svg>
   `;
 
