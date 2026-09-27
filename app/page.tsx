@@ -685,7 +685,57 @@ export default function MiniAppForm() {
       },
     };
 
-    const sourceDataUrl = await toPng(element, options);
+    const hasCompositeImages = element.querySelector(
+      '[data-export-composite-image]'
+    );
+    const exportElement = hasCompositeImages
+      ? (element.cloneNode(true) as HTMLElement)
+      : element;
+    const temporaryExportElement = hasCompositeImages ? exportElement : null;
+
+    if (temporaryExportElement) {
+      temporaryExportElement.style.position = 'fixed';
+      temporaryExportElement.style.left = '-10000px';
+      temporaryExportElement.style.top = '0';
+      temporaryExportElement.style.margin = '0';
+      temporaryExportElement.style.transform = 'none';
+      temporaryExportElement.style.zIndex = '-1';
+      document.body.appendChild(temporaryExportElement);
+      await waitForImages(temporaryExportElement);
+    }
+
+    const compositeImages = Array.from(
+      exportElement.querySelectorAll<HTMLImageElement>(
+        '[data-export-composite-image]'
+      )
+    ).map((image) => {
+      const imageRect = image.getBoundingClientRect();
+      const elementRect = exportElement.getBoundingClientRect();
+
+      return {
+        image,
+        visibility: image.style.visibility,
+        x: imageRect.left - elementRect.left,
+        y: imageRect.top - elementRect.top,
+        width: imageRect.width,
+        height: imageRect.height,
+      };
+    });
+
+    compositeImages.forEach(({ image }) => {
+      image.style.visibility = 'hidden';
+    });
+
+    let sourceDataUrl: string;
+    try {
+      sourceDataUrl = await toPng(exportElement, options);
+    } finally {
+      compositeImages.forEach(({ image, visibility }) => {
+        image.style.visibility = visibility;
+      });
+      temporaryExportElement?.remove();
+    }
+
     const sourceImage = new Image();
     await new Promise<void>((resolve, reject) => {
       sourceImage.onload = () => resolve();
@@ -716,6 +766,42 @@ export default function MiniAppForm() {
       imageWidth,
       imageHeight
     );
+
+    const exportScale = Math.min(
+      exportWidth / exportElement.offsetWidth,
+      exportHeight / exportElement.offsetHeight
+    );
+    const elementOffsetX =
+      (exportWidth - exportElement.offsetWidth * exportScale) / 2;
+    const elementOffsetY =
+      (exportHeight - exportElement.offsetHeight * exportScale) / 2;
+
+    for (const compositeImage of compositeImages) {
+      if (compositeImage.image.decode) {
+        await compositeImage.image.decode();
+      }
+
+      if (!compositeImage.image.naturalWidth) {
+        throw new Error('ไม่สามารถโหลดโลโก้สำหรับ Export ได้');
+      }
+
+      const targetWidth = compositeImage.width * exportScale;
+      const targetHeight = compositeImage.height * exportScale;
+      const imageScale = Math.min(
+        targetWidth / compositeImage.image.naturalWidth,
+        targetHeight / compositeImage.image.naturalHeight
+      );
+      const drawWidth = compositeImage.image.naturalWidth * imageScale;
+      const drawHeight = compositeImage.image.naturalHeight * imageScale;
+
+      context.drawImage(
+        compositeImage.image,
+        elementOffsetX + compositeImage.x * exportScale + (targetWidth - drawWidth) / 2,
+        elementOffsetY + compositeImage.y * exportScale + (targetHeight - drawHeight) / 2,
+        drawWidth,
+        drawHeight
+      );
+    }
 
     return canvas.toDataURL('image/png');
   };
@@ -1259,6 +1345,7 @@ export default function MiniAppForm() {
                       {footerLogo ? (
                         <img
                           src={footerLogo}
+                          data-export-composite-image
                           className="max-w-full max-h-full object-contain"
                           alt="Partner Logo"
                         />
@@ -1301,6 +1388,7 @@ export default function MiniAppForm() {
                     <div className="w-[78px] h-[58px] flex items-center justify-center">
                       <img
                         src="/unnamed.png"
+                        data-export-composite-image
                         className="max-w-full max-h-full object-contain"
                         alt="ทางรัฐ"
                       />
