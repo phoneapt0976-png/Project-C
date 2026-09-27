@@ -1212,22 +1212,6 @@ export default function MiniAppForm() {
                 }}
               />
 
-              <div className="absolute top-[35px] left-[25px] right-[25px] z-40 flex justify-center">
-                <h1
-                  className="font-bold text-[23px] leading-tight whitespace-nowrap"
-                  style={{
-                    color:
-                      '#ffffff',
-                    fontFamily:
-                      'Anuphan, sans-serif',
-                    textShadow:
-                      '0 3px 8px rgba(0,0,0,0.95)',
-                  }}
-                >
-                  การให้บริการประชาชน
-                </h1>
-              </div>
-
               <div
                 className="absolute top-[120px] left-[28px] right-[28px] bottom-[100px] z-20 overflow-hidden"
               >
