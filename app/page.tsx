@@ -664,11 +664,11 @@ export default function MiniAppForm() {
     };
 
   const createImageWithCanvas = async (element: HTMLElement): Promise<string> => {
-    // ใช้ความละเอียดเดียวกันทั้ง Desktop และ Mobile
-    // หน้าจอ Preview = 360 × 640
-    // pixelRatio = 3 จะได้ไฟล์จริง = 1080 × 1920
-    // จึงไม่ลดเหลือ 540 × 960 บนมือถืออีกต่อไป
+    // Keep the preview render at its existing resolution, then fit it without
+    // distortion into the fixed landscape export canvas.
     const renderRatio = 3;
+    const exportWidth = 1920;
+    const exportHeight = 1080;
 
     await waitForImages(element);
     await waitForFonts();
@@ -685,7 +685,39 @@ export default function MiniAppForm() {
       },
     };
 
-    return await toPng(element, options);
+    const sourceDataUrl = await toPng(element, options);
+    const sourceImage = new Image();
+    await new Promise<void>((resolve, reject) => {
+      sourceImage.onload = () => resolve();
+      sourceImage.onerror = () => reject(new Error('ไม่สามารถอ่านภาพ Screenshot ได้'));
+      sourceImage.src = sourceDataUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = exportWidth;
+    canvas.height = exportHeight;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('ไม่สามารถสร้าง Canvas สำหรับ Export ได้');
+    }
+
+    const scale = Math.min(
+      exportWidth / sourceImage.width,
+      exportHeight / sourceImage.height
+    );
+    const imageWidth = sourceImage.width * scale;
+    const imageHeight = sourceImage.height * scale;
+
+    context.drawImage(
+      sourceImage,
+      (exportWidth - imageWidth) / 2,
+      (exportHeight - imageHeight) / 2,
+      imageWidth,
+      imageHeight
+    );
+
+    return canvas.toDataURL('image/png');
   };
 
   const dataUrlToBlob =
