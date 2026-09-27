@@ -685,24 +685,7 @@ export default function MiniAppForm() {
       },
     };
 
-    const hasCompositeImages = element.querySelector(
-      '[data-export-composite-image]'
-    );
-    const exportElement = hasCompositeImages
-      ? (element.cloneNode(true) as HTMLElement)
-      : element;
-    const temporaryExportElement = hasCompositeImages ? exportElement : null;
-
-    if (temporaryExportElement) {
-      temporaryExportElement.style.position = 'fixed';
-      temporaryExportElement.style.left = '-10000px';
-      temporaryExportElement.style.top = '0';
-      temporaryExportElement.style.margin = '0';
-      temporaryExportElement.style.transform = 'none';
-      temporaryExportElement.style.zIndex = '-1';
-      document.body.appendChild(temporaryExportElement);
-      await waitForImages(temporaryExportElement);
-    }
+    const exportElement = element;
 
     const compositeImages = Array.from(
       exportElement.querySelectorAll<HTMLImageElement>(
@@ -733,7 +716,6 @@ export default function MiniAppForm() {
       compositeImages.forEach(({ image, visibility }) => {
         image.style.visibility = visibility;
       });
-      temporaryExportElement?.remove();
     }
 
     const sourceImage = new Image();
