@@ -89,21 +89,28 @@ const inferVisualContext = (
  * 3. Prompt สำหรับ AI
  * ============================================================
  */
-const buildImagePrompt = (visualContext: string) => {
+const buildImagePrompt = (
+  visualContext: string,
+  appNameTH: string,
+  appNameEN: string
+) => {
   return `
-Create ONE clean premium vertical environmental photograph.
+Create ONE new clean premium vertical environmental photograph using BOTH the app name and the supplied organization logo as references.
 
 SCENE:
 ${visualContext}
+
+APP NAME:
+${appNameTH || appNameEN}
+
+LOGO REFERENCE:
+Study the supplied logo for its subject, symbols, colors, and visual identity. Use those clues together with the app name to choose a relevant scene and color palette. Treat the logo only as a visual reference; create a new photographic scene instead of copying or placing the logo into the image.
 
 The image must look like a real professional commercial photograph.
 Show ONLY ONE main subject and environment naturally with PERFECT ANATOMY and REALISTIC PROPORTIONS.
 
 IMPORTANT:
-This is ONLY the visual artwork.
-ABSOLUTE NO TEXT OF ANY KIND.
-Do not generate: application names, signs, logos, letters, numbers, typography.
-The final image must contain ZERO readable or pseudo-readable text.
+Create only the background artwork, with a clean unmarked scene and no lettering, signs, logos, or watermark.
 
 COMPOSITION:
 Vertical 9:16.
@@ -120,24 +127,39 @@ Photorealistic. Premium commercial photography. Cinematic natural lighting. High
  * 4. Negative Prompt (ข้อห้ามของ AI)
  * ============================================================
  */
-const buildNegativePrompt = () => {
-  return `text, writing, letters, words, numbers, typography, label, title, sign, logo, brand, watermark, smartphone, device, screen, UI, mutated, deformed, extra limbs, bad anatomy, weird proportions, two heads, multiple bodies, disfigured, surreal, unnatural body, overlapping bodies, office worker, businessman, suit`;
-};
-
 /**
  * ============================================================
  * 5. ติดต่อ deAPI เพื่อสร้างรูปพื้นหลัง (พร้อมระบบกันค้าง)
  * ============================================================
  */
-const generateWithDeApi = async (appNameTH: string, appNameEN: string) => {
+const generateWithDeApi = async (
+  appNameTH: string,
+  appNameEN: string,
+  orgLogo: string
+) => {
   const apiKey = process.env.DEAPI_API_KEY;
   const model = process.env.DEAPI_IMAGE_MODEL || 'Flux_2_Klein_4B_BF16';
 
   if (!apiKey) throw new Error('DEAPI_API_KEY_MISSING');
 
   const visualContext = inferVisualContext(appNameTH, appNameEN);
-  const prompt = buildImagePrompt(visualContext);
-  const negativePrompt = buildNegativePrompt();
+  const prompt = buildImagePrompt(visualContext, appNameTH, appNameEN);
+  const logoMatch = orgLogo.match(/^data:(image\/[\w.+-]+);base64,([\s\S]+)$/);
+
+  if (!logoMatch) {
+    throw new Error('โลโก้ต้องเป็นไฟล์รูปภาพชนิด Base64');
+  }
+
+  const logoBytes = Uint8Array.from(Buffer.from(logoMatch[2], 'base64'));
+  const logoBlob = new Blob([logoBytes], { type: logoMatch[1] });
+  const formData = new FormData();
+  formData.append('model', model);
+  formData.append('prompt', prompt);
+  formData.append('image', logoBlob, 'organization-logo.png');
+  formData.append('width', '768');
+  formData.append('height', '1344');
+  formData.append('steps', '4');
+  formData.append('seed', '-1');
 
   // ✨ กันค้าง 1: ควบคุมเวลาส่งคำสั่ง 30 วินาที
   const controller = new AbortController();
@@ -145,22 +167,13 @@ const generateWithDeApi = async (appNameTH: string, appNameEN: string) => {
 
   let response;
   try {
-    response = await fetch('https://api.deapi.ai/api/v2/images/generations', {
+    response = await fetch('https://api.deapi.ai/api/v2/images/edits', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         Accept: 'application/json',
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model,
-        prompt,
-        negative_prompt: negativePrompt,
-        width: 768,
-        height: 1344,
-        steps: 4,
-        seed: -1,
-      }),
+      body: formData,
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -301,6 +314,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const appNameTH = typeof body.appNameTH === 'string' ? body.appNameTH.trim() : '';
     const appNameEN = typeof body.appNameEN === 'string' ? body.appNameEN.trim() : '';
+    const orgLogo = typeof body.orgLogo === 'string' ? body.orgLogo : '';
 
     if (!appNameTH && !appNameEN) {
       return NextResponse.json(
@@ -309,8 +323,15 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!orgLogo) {
+      return NextResponse.json(
+        { error: 'กรุณาอัปโหลดโลโก้หน่วยงานก่อนสร้างภาพ' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
     try {
-      const aiBackgroundImage = await generateWithDeApi(appNameTH, appNameEN);
+      const aiBackgroundImage = await generateWithDeApi(appNameTH, appNameEN, orgLogo);
 
       if (aiBackgroundImage) {
         const finalArtwork = buildFinalArtwork(aiBackgroundImage);
