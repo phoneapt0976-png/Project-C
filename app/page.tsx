@@ -1377,30 +1377,6 @@ export default function MiniAppForm() {
                         </div>
                       )}
                     </div>
-                    <div className="w-[78px] flex flex-col items-center justify-center">
-                      <div
-                        className="font-black text-[25px] leading-none tracking-[-2px]"
-                        style={{
-                          color:
-                            themeColor,
-                          fontFamily:
-                            'Arial, sans-serif',
-                        }}
-                      >
-                        DGA
-                      </div>
-                      <div
-                        className="text-[5px] font-semibold mt-1 text-center leading-tight"
-                        style={{
-                          color:
-                            '#64748b',
-                          fontFamily:
-                            'Anuphan, sans-serif',
-                        }}
-                      >
-                        สำนักงานพัฒนารัฐบาลดิจิทัล
-                      </div>
-                    </div>
                     <div className="w-[78px] h-[58px] flex items-center justify-center">
                       <img
                         src="/unnamed.png"
