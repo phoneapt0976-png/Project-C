@@ -1153,6 +1153,14 @@ export default function MiniAppForm() {
                   />
                 </div>
 
+                <div className="w-[72px] h-[72px] bg-white rounded-lg p-1 flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+                  <div className="w-full h-full border-2 border-dashed border-gray-400 flex flex-col items-center justify-center rounded bg-gray-50">
+                    <span className="text-[10px] font-bold text-gray-500">
+                      QR DGA
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex-1 min-w-0 h-full flex items-center justify-center ml-1">
                   <img
                     src="/app-footer-promo.jpg"
