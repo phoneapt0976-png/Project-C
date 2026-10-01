@@ -211,34 +211,6 @@ const buildFinalArtwork = (aiImage: string) => {
 };
 
 /**
- * Fallback artwork used when the image provider is temporarily unavailable.
- */
-const buildFallbackArtwork = () => {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="768" height="1344" viewBox="0 0 768 1344">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#dff1ff" />
-          <stop offset="100%" stop-color="#8fc8ff" />
-        </linearGradient>
-        <linearGradient id="bottom" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
-          <stop offset="100%" stop-color="#0c47a1" stop-opacity="0.35" />
-        </linearGradient>
-      </defs>
-
-      <rect width="768" height="1344" fill="url(#bg)" />
-      <circle cx="620" cy="220" r="240" fill="#ffffff" opacity="0.28" />
-      <circle cx="120" cy="960" r="280" fill="#ffffff" opacity="0.22" />
-      <circle cx="680" cy="880" r="160" fill="#b7dcff" opacity="0.4" />
-      <rect x="0" y="900" width="768" height="444" fill="url(#bottom)" />
-    </svg>
-  `;
-
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-};
-
-/**
  * ============================================================
  * MAIN POST ROUTE
  * ============================================================
@@ -299,12 +271,25 @@ export async function POST(request: Request) {
         );
       }
 
+      const errorMessage = deApiError instanceof Error
+        ? deApiError.message.slice(0, 500)
+        : 'ไม่ทราบสาเหตุ';
+
+      return NextResponse.json(
+        { error: `AI สร้างภาพไม่สำเร็จ: ${errorMessage}` },
+        {
+          status: 502,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            Pragma: 'no-cache',
+          },
+        }
+      );
     }
 
-    const fallback = buildFallbackArtwork();
     return NextResponse.json(
-      { result: fallback, source: 'local-svg-fallback' },
-      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', Pragma: 'no-cache' } }
+      { error: 'AI สร้างภาพไม่สำเร็จ กรุณาลองใหม่อีกครั้ง' },
+      { status: 502, headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', Pragma: 'no-cache' } }
     );
 
   } catch (error: unknown) {
