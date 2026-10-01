@@ -1163,7 +1163,7 @@ export default function MiniAppForm() {
 
                 <div className="flex-1 min-w-0 h-full flex items-center justify-center ml-1">
                   <img
-                    src="/app-footer-promo.jpg"
+                    src="/app-footer-promo.png"
                     data-export-composite-image
                     className="max-w-full max-h-full object-contain"
                     alt="ทางลัดถึงรัฐ เชื่อมทางเดียว ง่าย จบ ครบทุกช่วงวัย พร้อมดาวน์โหลดแอป"
