@@ -38,8 +38,7 @@ export default function MiniAppForm() {
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const [appLogo, setAppLogo] = useState<string | null>(null);
   const [screenshot, setScreenshot] = useState<string | null>(null);
-  const [footerLogo, setFooterLogo] = useState<string | null>(null);
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [footerLogos, setFooterLogos] = useState<string[]>([]);
 
   const [appNameTH, setAppNameTH] = useState('');
   const [appNameEN, setAppNameEN] = useState('');
@@ -463,6 +462,37 @@ export default function MiniAppForm() {
     );
 
     e.target.value = '';
+  };
+
+  const handleFooterLogoUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    handleImageUpload(
+      e,
+      (logoUpdate) => {
+        setFooterLogos((currentLogos) => {
+          const currentLogo = currentLogos[index] ?? null;
+          const nextLogo =
+            typeof logoUpdate === 'function'
+              ? logoUpdate(currentLogo)
+              : logoUpdate;
+
+          if (index === currentLogos.length) {
+            return nextLogo
+              ? [...currentLogos, nextLogo]
+              : currentLogos;
+          }
+
+          if (!nextLogo) return currentLogos;
+
+          return currentLogos.map((logo, logoIndex) =>
+            logoIndex === index ? nextLogo : logo
+          );
+        });
+      },
+      true
+    );
   };
 
   const waitForImages = async (
@@ -1123,22 +1153,6 @@ export default function MiniAppForm() {
                   />
                 </div>
 
-                <div className="w-[72px] h-[72px] bg-white rounded-lg p-1 flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
-                  {qrCode ? (
-                    <img
-                      src={qrCode}
-                      className="w-full h-full object-cover rounded"
-                      alt="QR Code"
-                    />
-                  ) : (
-                    <div className="w-full h-full border-2 border-dashed border-gray-400 flex flex-col items-center justify-center rounded bg-gray-50">
-                      <span className="text-[10px] font-bold text-gray-500">
-                        QR DGA
-                      </span>
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex-1 flex flex-col items-center justify-center ml-1">
                   <div className="bg-white px-2 py-0.5 rounded-md shadow-sm mb-1 flex items-baseline justify-center">
                     <span className="text-black font-black text-[15px] tracking-tight">
@@ -1357,14 +1371,22 @@ export default function MiniAppForm() {
               >
                 <div className="absolute inset-0 flex items-center justify-center px-4">
                   <div className="w-full flex items-center justify-around">
-                    <div className="w-[72px] h-[58px] flex items-center justify-center">
-                      {footerLogo ? (
-                        <img
-                          src={footerLogo}
-                          data-export-composite-image
-                          className="max-w-full max-h-full object-contain"
-                          alt="Partner Logo"
-                        />
+                    <div className="flex-1 min-w-0 h-[58px] flex items-center justify-evenly gap-1">
+                      {footerLogos.length > 0 ? (
+                        footerLogos.map((logo, index) => (
+                          <div
+                            key={`footer-logo-preview-${index}`}
+                            className="h-full min-w-0 flex-1 flex items-center justify-center"
+                            style={{ maxWidth: `${Math.min(72, 216 / footerLogos.length)}px` }}
+                          >
+                            <img
+                              src={logo}
+                              data-export-composite-image
+                              className="max-w-full max-h-full object-contain"
+                              alt={`Partner Logo ${index + 1}`}
+                            />
+                          </div>
+                        ))
                       ) : (
                         <div
                           className="w-[50px] h-[50px] rounded-full flex items-center justify-center text-white text-[9px] font-bold"
@@ -1377,7 +1399,7 @@ export default function MiniAppForm() {
                         </div>
                       )}
                     </div>
-                    <div className="w-[78px] h-[58px] flex items-center justify-center">
+                    <div className="w-[72px] h-[58px] flex items-center justify-center">
                       <img
                         src="/unnamed.png"
                         data-export-composite-image
@@ -1915,99 +1937,63 @@ export default function MiniAppForm() {
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
-                    <label className="block text-xs font-semibold text-gray-500 mb-3">
-                      โลโก้พันธมิตร
-                    </label>
-                    <label
-                      className={`group relative w-24 h-24 rounded-2xl flex flex-col items-center justify-center text-blue-500 transition cursor-pointer overflow-hidden ${
-                        footerLogo
-                          ? 'bg-transparent'
-                          : 'bg-white border-2 border-dashed border-gray-200 hover:border-blue-300'
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) =>
-                          handleImageUpload(
-                            e,
-                            setFooterLogo,
-                            true
-                          )
-                        }
-                      />
-                      {footerLogo ? (
-                        <>
-                          <img
-                            src={footerLogo}
-                            className="w-full h-full object-contain"
-                            alt="Footer Logo"
+                <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+                  <label className="block text-xs font-semibold text-gray-500 mb-3">
+                    โลโก้พันธมิตร
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {[...footerLogos, null].map((logo, index) => (
+                      <div key={`footer-logo-upload-${index}`}>
+                        <label className="block text-[10px] font-medium text-gray-400 mb-2">
+                          {logo
+                            ? `โลโก้ ${index + 1}`
+                            : footerLogos.length === 0
+                              ? 'เพิ่มโลโก้'
+                              : 'เพิ่มโลโก้อีก'}
+                        </label>
+                        <label
+                          className={`group relative w-24 h-24 rounded-2xl flex flex-col items-center justify-center text-blue-500 transition cursor-pointer overflow-hidden ${
+                            logo
+                              ? 'bg-transparent'
+                              : 'bg-white border-2 border-dashed border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) =>
+                              handleFooterLogoUpload(e, index)
+                            }
                           />
-                          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                            <span className="text-white text-[10px] font-semibold">
-                              เปลี่ยน
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-2xl">
-                            +
-                          </span>
-                          <span className="text-xs font-semibold text-gray-500 mt-1">
-                            อัปโหลด
-                          </span>
-                        </>
-                      )}
-                    </label>
-                    <p className="text-[10px] text-gray-400 mt-2">
-                      ลบพื้นหลังสีขาวอัตโนมัติ
-                    </p>
+                          {logo ? (
+                            <>
+                              <img
+                                src={logo}
+                                className="w-full h-full object-contain"
+                                alt={`โลโก้พันธมิตร ${index + 1}`}
+                              />
+                              <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                <span className="text-white text-[10px] font-semibold">
+                                  เปลี่ยน
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-2xl">+</span>
+                              <span className="text-xs font-semibold text-gray-500 mt-1">
+                                อัปโหลด
+                              </span>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
-                    <label className="block text-xs font-semibold text-gray-500 mb-3">
-                      QR Code ทางรัฐ
-                    </label>
-                    <label className="group relative w-24 h-24 rounded-2xl bg-white border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-blue-500 hover:border-blue-300 transition cursor-pointer overflow-hidden">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) =>
-                          handleImageUpload(
-                            e,
-                            setQrCode
-                          )
-                        }
-                      />
-                      {qrCode ? (
-                        <>
-                          <img
-                            src={qrCode}
-                            className="w-full h-full object-cover"
-                            alt="QR Code"
-                          />
-                          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                            <span className="text-white text-[10px] font-semibold">
-                              เปลี่ยน
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-2xl">
-                            +
-                          </span>
-                          <span className="text-xs font-semibold text-gray-500 mt-1">
-                            QR Code
-                          </span>
-                        </>
-                      )}
-                    </label>
-                  </div>
+                  <p className="text-[10px] text-gray-400 mt-3">
+                    ลบพื้นหลังสีขาวอัตโนมัติ
+                  </p>
                 </div>
               </div>
             </div>
