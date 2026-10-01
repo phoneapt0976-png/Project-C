@@ -17,6 +17,7 @@ export default function MiniAppForm() {
 
   const [appNameTH, setAppNameTH] = useState('');
   const [appNameEN, setAppNameEN] = useState('');
+  const [imagePrompt, setImagePrompt] = useState('');
   const [headerService, setHeaderService] = useState('');
   const [detail1, setDetail1] = useState('');
 
@@ -541,6 +542,13 @@ export default function MiniAppForm() {
         return;
       }
 
+      if (!imagePrompt.trim()) {
+        alert(
+          'กรุณาใส่ Prompt สำหรับสร้างภาพพื้นหลังก่อน'
+        );
+        return;
+      }
+
       if (isGenerating) {
         return;
       }
@@ -564,6 +572,7 @@ export default function MiniAppForm() {
               body: JSON.stringify({
                 appNameTH,
                 appNameEN,
+                imagePrompt,
                 orgLogo,
               }),
             }
@@ -1698,6 +1707,33 @@ export default function MiniAppForm() {
                         placeholder="e.g. Fishing Gear Shop"
                         className="w-full h-12 border border-gray-200 bg-gray-50/70 rounded-xl px-4 text-sm text-gray-800 placeholder:text-gray-300 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
                       />
+                    </div>
+                    <div>
+                      <label className="flex items-center justify-between text-xs font-semibold text-gray-500 mb-2">
+                        <span>
+                          Prompt สำหรับสร้างภาพพื้นหลัง <span className="text-red-400">*</span>
+                        </span>
+                        <span className="text-gray-300">
+                          IMAGE PROMPT
+                        </span>
+                      </label>
+                      <p className="text-[11px] text-gray-400 mb-2">
+                        ชื่อแอปใช้แสดงในภาพ ส่วน AI จะใช้ Prompt นี้สร้างฉากหลัง
+                      </p>
+                      <textarea
+                        value={imagePrompt}
+                        onChange={(e) =>
+                          setImagePrompt(e.target.value)
+                        }
+                        maxLength={1000}
+                        placeholder="อธิบายฉากหรือบรรยากาศที่ต้องการ เช่น ผู้คนในชุมชนกำลังช่วยกันปลูกต้นไม้ในสวนสาธารณะ"
+                        className="w-full min-h-28 border border-gray-200 bg-gray-50/70 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-300 resize-y outline-none transition focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                      />
+                      <div className="flex justify-end mt-1.5">
+                        <span className="text-[10px] text-gray-400">
+                          {imagePrompt.length}/1000 ตัวอักษร
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

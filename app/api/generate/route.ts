@@ -5,99 +5,20 @@ export const maxDuration = 60;
 
 /**
  * ============================================================
- * วิเคราะห์บริบทของภาพจากชื่อแอป
- * ============================================================
- */
-const inferVisualContext = (
-  appNameTH: string,
-  appNameEN: string
-) => {
-  const text = `${appNameTH} ${appNameEN}`.trim().toLowerCase();
-
-  if (text.match(/มอเตอร์ไซค์|รถจักร|motorcycle|scooter/)) {
-    return 'premium motorcycle dealership and professional motorcycle service center environment';
-  }
-  if (text.match(/รถยนต์|รถเก๋ง|รถมือสอง|เต็นท์รถ|car|automotive|vehicle/)) {
-    return 'premium modern automotive dealership environment';
-  }
-  // ✨ คีย์เวิร์ดสัตว์เจาะจง
-  if (text.match(/สัตว์|สวนสัตว์|zoo|animal|เสือ|tiger|แมว|cat|หมา|สุนัข|dog|นก|bird|ปลา|fish/)) {
-    const animalName = appNameEN || 'magnificent animal';
-    return `beautiful realistic wildlife sanctuary with ONLY ONE ${animalName} walking towards the camera in a lush tropical forest, perfect animal anatomy, natural animal habitat`;
-  }
-  if (text.match(/กีฬา|ฟิตเนส|ฟุตบอล|วิ่ง|sport|fitness|football|gym/)) {
-    return 'premium athletic sports and lifestyle environment';
-  }
-  if (text.match(/โรงพยาบาล|คลินิก|สุขภาพ|การแพทย์|หมอ|health|hospital|clinic/)) {
-    return 'modern premium hospital and healthcare environment';
-  }
-  if (text.match(/โรงเรียน|มหาวิทยาลัย|วิทยาลัย|การศึกษา|school|university|education/)) {
-    return 'modern premium educational campus environment';
-  }
-  if (text.match(/ศูนย์(?:คุณ)?ธรรม|คุ(?:ณ)?ธรรม|จริยธรรม|คุณค่า|ethic|morality|moral|integrity/)) {
-    return 'a real welcoming Thai moral development and ethics center, with people of different ages learning and practicing compassion, honesty, responsibility, and helping one another through natural community activities; warm human-centered documentary photography';
-  }
-  if (text.match(/ธนาคาร|การเงิน|สินเชื่อ|ลงทุน|ประกัน|bank|finance|investment/)) {
-    return 'premium modern financial service environment';
-  }
-  if (text.match(/ร้านอาหาร|ภัตตาคาร|restaurant|food|dining/)) {
-    return 'premium modern restaurant environment';
-  }
-  if (text.match(/คาเฟ่|ร้านกาแฟ|เบเกอรี่|cafe|coffee|bakery/)) {
-    return 'premium modern cafe environment';
-  }
-  if (text.match(/ร้านค้า|ช้อป|ค้าปลีก|shopping|shop|store|retail/)) {
-    return 'premium modern retail environment';
-  }
-  if (text.match(/ห้องสมุด|หนังสือ|library|book/)) {
-    return 'premium modern public library environment';
-  }
-  if (text.match(/ท่องเที่ยว|ทัวร์|โรงแรม|รีสอร์ท|tour|hotel|travel/)) {
-    return 'premium Thai tourism destination environment';
-  }
-  if (text.match(/ตำรวจ|police/)) {
-    return 'modern professional police service environment';
-  }
-  if (text.match(/ราชการ|รัฐบาล|เทศบาล|กรม|กอง|สำนักงาน|government|civic/)) {
-    return 'premium modern civic public service environment';
-  }
-  if (text.match(/เกษตร|ฟาร์ม|ไร่|สวน|agriculture|farm/)) {
-    return 'premium modern agricultural innovation environment';
-  }
-  if (text.match(/ขนส่ง|เดินทาง|รถไฟ|สนามบิน|transport|transit|airport/)) {
-    return 'premium modern transportation hub environment';
-  }
-  if (text.match(/เทคโนโลยี|ไอที|ซอฟต์แวร์|technology|tech|software|digital/)) {
-    return 'premium modern technology business environment';
-  }
-
-  // Use the app name as a fallback cue when it does not match a known category.
-  const fallbackSubject = appNameEN || appNameTH || 'modern business';
-  return `premium realistic environment representing the concept of "${fallbackSubject}"`;
-};
-
-/**
- * ============================================================
  * Prompt สำหรับ AI
  * ============================================================
  */
 const buildImagePrompt = (
-  visualContext: string,
-  appNameTH: string,
-  appNameEN: string
+  userPrompt: string
 ) => {
   return `
-Create ONE new clean premium vertical environmental photograph using BOTH the app name and the supplied organization logo as references.
+Create ONE new clean premium vertical environmental photograph based on the user's image prompt below.
 
-SCENE:
-${visualContext}
-
-APP NAME:
-${appNameTH || appNameEN}
+USER IMAGE PROMPT:
+${userPrompt}
 
 LOGO REFERENCE:
-Study the supplied logo for its subject, symbols, colors, and visual identity. Use those clues together with the app name to choose a relevant scene and color palette. Treat the logo only as a visual reference; create a new photographic scene instead of copying or placing the logo into the image.
-If the name describes an abstract mission or value, represent it through a believable place and human activity rather than a literal symbol. When the name and logo are ambiguous, prefer a coherent scene that fits their shared clues.
+Use the supplied organization logo only as a visual reference for compatible subject matter, colors, or visual identity. Do not copy or place the logo in the generated image.
 
 The image must look like a real professional commercial photograph.
 Show ONLY ONE main subject and environment naturally with PERFECT ANATOMY and REALISTIC PROPORTIONS.
@@ -121,8 +42,7 @@ Photorealistic. Premium commercial photography. Cinematic natural lighting. High
  * ============================================================
  */
 const generateWithDeApi = async (
-  appNameTH: string,
-  appNameEN: string,
+  userPrompt: string,
   orgLogo: string
 ) => {
   const deadline = Date.now() + 50_000;
@@ -131,8 +51,7 @@ const generateWithDeApi = async (
 
   if (!apiKey) throw new Error('DEAPI_API_KEY_MISSING');
 
-  const visualContext = inferVisualContext(appNameTH, appNameEN);
-  const prompt = buildImagePrompt(visualContext, appNameTH, appNameEN);
+  const prompt = buildImagePrompt(userPrompt);
   const logoMatch = orgLogo.match(/^data:(image\/[\w.+-]+);base64,([\s\S]+)$/);
 
   if (!logoMatch) {
@@ -329,11 +248,26 @@ export async function POST(request: Request) {
     const body = await request.json();
     const appNameTH = typeof body.appNameTH === 'string' ? body.appNameTH.trim() : '';
     const appNameEN = typeof body.appNameEN === 'string' ? body.appNameEN.trim() : '';
+    const userPrompt = typeof body.imagePrompt === 'string' ? body.imagePrompt.trim() : '';
     const orgLogo = typeof body.orgLogo === 'string' ? body.orgLogo : '';
 
     if (!appNameTH && !appNameEN) {
       return NextResponse.json(
         { error: 'กรุณาใส่ชื่อแอปก่อนสร้างภาพ' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    if (!userPrompt) {
+      return NextResponse.json(
+        { error: 'กรุณาใส่ Prompt สำหรับสร้างภาพพื้นหลังก่อน' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    if (userPrompt.length > 1000) {
+      return NextResponse.json(
+        { error: 'Prompt ต้องมีความยาวไม่เกิน 1,000 ตัวอักษร' },
         { status: 400, headers: { 'Cache-Control': 'no-store' } }
       );
     }
@@ -346,7 +280,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      const aiBackgroundImage = await generateWithDeApi(appNameTH, appNameEN, orgLogo);
+      const aiBackgroundImage = await generateWithDeApi(userPrompt, orgLogo);
 
       if (aiBackgroundImage) {
         const finalArtwork = buildFinalArtwork(aiBackgroundImage);
