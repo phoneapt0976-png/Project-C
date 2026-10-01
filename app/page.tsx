@@ -570,10 +570,7 @@ export default function MiniAppForm() {
                   'application/json',
               },
               body: JSON.stringify({
-                appNameTH,
-                appNameEN,
                 imagePrompt,
-                orgLogo,
               }),
             }
           );

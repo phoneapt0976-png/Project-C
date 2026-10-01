@@ -17,9 +17,6 @@ Create ONE new clean premium vertical environmental photograph based on the user
 USER IMAGE PROMPT:
 ${userPrompt}
 
-LOGO REFERENCE:
-Use the supplied organization logo only as a visual reference for compatible subject matter, colors, or visual identity. Do not copy or place the logo in the generated image.
-
 The image must look like a real professional commercial photograph.
 Show ONLY ONE main subject and environment naturally with PERFECT ANATOMY and REALISTIC PROPORTIONS.
 
@@ -42,8 +39,7 @@ Photorealistic. Premium commercial photography. Cinematic natural lighting. High
  * ============================================================
  */
 const generateWithDeApi = async (
-  userPrompt: string,
-  orgLogo: string
+  userPrompt: string
 ) => {
   const deadline = Date.now() + 50_000;
   const apiKey = process.env.DEAPI_API_KEY;
@@ -52,18 +48,9 @@ const generateWithDeApi = async (
   if (!apiKey) throw new Error('DEAPI_API_KEY_MISSING');
 
   const prompt = buildImagePrompt(userPrompt);
-  const logoMatch = orgLogo.match(/^data:(image\/[\w.+-]+);base64,([\s\S]+)$/);
-
-  if (!logoMatch) {
-    throw new Error('โลโก้ต้องเป็นไฟล์รูปภาพชนิด Base64');
-  }
-
-  const logoBytes = Uint8Array.from(Buffer.from(logoMatch[2], 'base64'));
-  const logoBlob = new Blob([logoBytes], { type: logoMatch[1] });
   const formData = new FormData();
   formData.append('model', model);
   formData.append('prompt', prompt);
-  formData.append('image', logoBlob, 'organization-logo.png');
   formData.append('width', '768');
   formData.append('height', '1344');
   formData.append('steps', '4');
@@ -75,7 +62,7 @@ const generateWithDeApi = async (
 
   let response;
   try {
-    response = await fetch('https://api.deapi.ai/api/v2/images/edits', {
+    response = await fetch('https://api.deapi.ai/api/v2/images/generations', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -218,17 +205,7 @@ const buildFinalArtwork = (aiImage: string) => {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const appNameTH = typeof body.appNameTH === 'string' ? body.appNameTH.trim() : '';
-    const appNameEN = typeof body.appNameEN === 'string' ? body.appNameEN.trim() : '';
     const userPrompt = typeof body.imagePrompt === 'string' ? body.imagePrompt.trim() : '';
-    const orgLogo = typeof body.orgLogo === 'string' ? body.orgLogo : '';
-
-    if (!appNameTH && !appNameEN) {
-      return NextResponse.json(
-        { error: 'กรุณาใส่ชื่อแอปก่อนสร้างภาพ' },
-        { status: 400, headers: { 'Cache-Control': 'no-store' } }
-      );
-    }
 
     if (!userPrompt) {
       return NextResponse.json(
@@ -244,15 +221,8 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!orgLogo) {
-      return NextResponse.json(
-        { error: 'กรุณาอัปโหลดโลโก้หน่วยงานก่อนสร้างภาพ' },
-        { status: 400, headers: { 'Cache-Control': 'no-store' } }
-      );
-    }
-
     try {
-      const aiBackgroundImage = await generateWithDeApi(userPrompt, orgLogo);
+      const aiBackgroundImage = await generateWithDeApi(userPrompt);
 
       if (aiBackgroundImage) {
         const finalArtwork = buildFinalArtwork(aiBackgroundImage);
