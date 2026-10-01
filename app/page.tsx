@@ -1153,40 +1153,13 @@ export default function MiniAppForm() {
                   />
                 </div>
 
-                <div className="flex-1 flex flex-col items-center justify-center ml-1">
-                  <div className="bg-white px-2 py-0.5 rounded-md shadow-sm mb-1 flex items-baseline justify-center">
-                    <span className="text-black font-black text-[15px] tracking-tight">
-                      ทางลัด
-                    </span>
-                    <span className="text-gray-500 text-[10px] mx-1">
-                      ถึง
-                    </span>
-                    <span className="text-black font-black text-[15px] tracking-tight">
-                      รัฐ
-                    </span>
-                  </div>
-                  <div className="text-white text-[10px] font-bold mb-1 tracking-wider">
-                    ช่องทางเดียว
-                  </div>
-                  <div className="text-white font-bold text-[11px] mb-1.5 flex gap-1">
-                    <span>
-                      ง่าย
-                    </span>
-                    <span className="text-red-400">
-                      จบ
-                    </span>
-                    <span className="text-green-300">
-                      ครบทุกช่วงวัย
-                    </span>
-                  </div>
-                  <div className="flex gap-1">
-                    <div className="w-[52px] h-[16px] bg-black rounded-[4px] flex items-center justify-center text-[5px] text-white font-bold border border-white/30">
-                      Google play
-                    </div>
-                    <div className="w-[52px] h-[16px] bg-black rounded-[4px] flex items-center justify-center text-[5px] text-white font-bold border border-white/30">
-                      App Store
-                    </div>
-                  </div>
+                <div className="flex-1 min-w-0 h-full flex items-center justify-center ml-1">
+                  <img
+                    src="/app-footer-promo.jpg"
+                    data-export-composite-image
+                    className="max-w-full max-h-full object-contain"
+                    alt="ทางลัดถึงรัฐ เชื่อมทางเดียว ง่าย จบ ครบทุกช่วงวัย พร้อมดาวน์โหลดแอป"
+                  />
                 </div>
                 <ScreenshotBottomAccent />
               </div>
