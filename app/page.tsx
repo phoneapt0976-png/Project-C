@@ -6,6 +6,32 @@ import '@fontsource/anuphan/600.css';
 import '@fontsource/anuphan/700.css';
 import { toPng } from 'html-to-image';
 
+const ScreenshotBottomAccent = () => (
+  <div
+    aria-hidden="true"
+    className="absolute inset-x-0 bottom-0 z-[60] h-[16px] pointer-events-none"
+  >
+    <div
+      className="absolute inset-x-0 bottom-0 top-[10px]"
+      style={{ backgroundColor: '#effaff' }}
+    />
+    <div
+      className="absolute left-0 right-[8px] top-[6px] h-[5px]"
+      style={{
+        background: 'linear-gradient(90deg, #b9eaff 0%, #d9f4ff 100%)',
+        borderTop: '1px solid #66c9f2',
+      }}
+    />
+    <div
+      className="absolute right-0 top-[6px] h-[5px] w-[8px]"
+      style={{
+        backgroundColor: '#d9f4ff',
+        clipPath: 'polygon(0 0, 100% 0, 100% 100%)',
+      }}
+    />
+  </div>
+);
+
 export default function MiniAppForm() {
   const [showPreview, setShowPreview] = useState(false);
 
@@ -1148,6 +1174,7 @@ export default function MiniAppForm() {
                     </div>
                   </div>
                 </div>
+                <ScreenshotBottomAccent />
               </div>
             </div>
             <button
@@ -1224,6 +1251,7 @@ export default function MiniAppForm() {
                         ภาพแคปหน้าจอ
                       </span>
                     )}
+                    <ScreenshotBottomAccent />
                   </div>
                 </div>
               </div>
@@ -1383,6 +1411,7 @@ export default function MiniAppForm() {
                     </div>
                   </div>
                 </div>
+                <ScreenshotBottomAccent />
               </div>
             </div>
             <button
