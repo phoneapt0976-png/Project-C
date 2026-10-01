@@ -45,6 +45,9 @@ const inferVisualContext = (
   if (text.match(/โรงเรียน|มหาวิทยาลัย|วิทยาลัย|การศึกษา|school|university|education/)) {
     return 'modern premium educational campus environment';
   }
+  if (text.match(/คุ(?:ณ)?ธรรม|จริยธรรม|คุณค่า|ethic|morality|moral|integrity/)) {
+    return 'a welcoming Thai community learning center where people of different ages take part in thoughtful activities that show compassion, honesty, responsibility, and helping one another; warm human-centered public service photography';
+  }
   if (text.match(/ธนาคาร|การเงิน|สินเชื่อ|ลงทุน|ประกัน|bank|finance|investment/)) {
     return 'premium modern financial service environment';
   }
@@ -79,7 +82,7 @@ const inferVisualContext = (
     return 'premium modern technology business environment';
   }
 
-  // ✨ ไม้ตาย: ถ้าพิมพ์คำแปลกๆ ให้เอาคำนั้นไปสั่งวาดตรงๆ
+  // Use the app name as a fallback cue when it does not match a known category.
   const fallbackSubject = appNameEN || appNameTH || 'modern business';
   return `premium realistic environment representing the concept of "${fallbackSubject}"`;
 };
@@ -105,6 +108,7 @@ ${appNameTH || appNameEN}
 
 LOGO REFERENCE:
 Study the supplied logo for its subject, symbols, colors, and visual identity. Use those clues together with the app name to choose a relevant scene and color palette. Treat the logo only as a visual reference; create a new photographic scene instead of copying or placing the logo into the image.
+If the name describes an abstract mission or value, represent it through a believable place and human activity rather than a literal symbol. When the name and logo are ambiguous, prefer a coherent scene that fits their shared clues.
 
 The image must look like a real professional commercial photograph.
 Show ONLY ONE main subject and environment naturally with PERFECT ANATOMY and REALISTIC PROPORTIONS.
