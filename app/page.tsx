@@ -558,23 +558,6 @@ export default function MiniAppForm() {
 
   const handlePreviewClick =
     async () => {
-      if (
-        !appNameTH &&
-        !appNameEN
-      ) {
-        alert(
-          'กรุณาใส่ชื่อแอปก่อน'
-        );
-        return;
-      }
-
-      if (!orgLogo) {
-        alert(
-          'กรุณาอัปโหลดโลโก้หน่วยงานก่อน'
-        );
-        return;
-      }
-
       if (!imagePrompt.trim()) {
         alert(
           'กรุณาใส่ Prompt สำหรับสร้างภาพพื้นหลังก่อน'
@@ -1077,25 +1060,15 @@ export default function MiniAppForm() {
 
               <div className="absolute top-5 left-4 right-4 z-20">
                 <div className="flex items-start gap-3">
-                  <div className="w-[55px] h-[62px] flex-shrink-0 flex items-center justify-center">
-                    {orgLogo ? (
+                  {orgLogo && (
+                    <div className="w-[55px] h-[62px] flex-shrink-0 flex items-center justify-center">
                       <img
                         src={orgLogo}
                         className="w-full h-full object-contain"
                         alt="Org Logo"
                       />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center text-white text-[8px] font-bold rounded"
-                        style={{
-                          backgroundColor:
-                            themeColor,
-                        }}
-                      >
-                        LOGO
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   <div
                     className="min-w-0 flex-1 pt-0.5"
                     style={{
@@ -1605,12 +1578,12 @@ export default function MiniAppForm() {
                       ข้อมูล MiniApp
                     </h2>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      โลโก้หน่วยงานและชื่อแอปพลิเคชัน
+                      โลโก้หน่วยงานและชื่อแอปพลิเคชัน (ไม่บังคับ)
                     </p>
                   </div>
                   <div className="ml-auto hidden sm:block">
-                    <span className="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-[11px] font-semibold">
-                      Required
+                    <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-[11px] font-semibold">
+                      Optional
                     </span>
                   </div>
                 </div>
