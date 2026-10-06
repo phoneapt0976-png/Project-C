@@ -8,9 +8,11 @@ import { toPng } from 'html-to-image';
 
 export default function MiniAppForm() {
   const [showPreview, setShowPreview] = useState(false);
+  const [showImageChoices, setShowImageChoices] = useState(false);
 
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const [appLogo, setAppLogo] = useState<string | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [footerLogos, setFooterLogos] = useState<string[]>([]);
 
@@ -24,6 +26,7 @@ export default function MiniAppForm() {
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   const [titleTextColor, setTitleTextColor] = useState('#ffffff');
   const [titleTextShadow, setTitleTextShadow] = useState(
@@ -584,87 +587,67 @@ export default function MiniAppForm() {
       }
 
       try {
-        setIsGenerating(
-          true
-        );
+        setIsGenerating(true);
+        setGenerationProgress(0);
+        setGeneratedImages([]);
 
-        setAppLogo(null);
+        const images: string[] = [];
+        let generationError: unknown = null;
 
-        const response =
-          await fetch(
-            '/api/generate',
-            {
+        for (let index = 0; index < 3; index += 1) {
+          setGenerationProgress(index + 1);
+
+          try {
+            const response = await fetch('/api/generate', {
               method: 'POST',
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
-              body: JSON.stringify({
-                imagePrompt,
-              }),
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imagePrompt }),
+            });
+
+            let data: { result?: string; error?: string };
+            try {
+              data = await response.json();
+            } catch {
+              throw new Error('เซิร์ฟเวอร์ส่งข้อมูลกลับมาไม่ถูกต้อง');
             }
-          );
 
-        let data: {
-          result?: string;
-          error?: string;
-        };
+            if (!response.ok) {
+              throw new Error(data?.error || 'ไม่สามารถสร้างภาพ AI ได้');
+            }
 
-        try {
-          data =
-            await response.json();
-        } catch {
-          throw new Error(
-            'เซิร์ฟเวอร์ส่งข้อมูลกลับมาไม่ถูกต้อง'
-          );
-        }
+            if (!data?.result) {
+              throw new Error('ระบบสร้างภาพไม่ได้ส่งภาพกลับมา');
+            }
 
-        if (!response.ok) {
-          throw new Error(
-            data?.error ||
-              'ไม่สามารถสร้างภาพ AI ได้'
-          );
-        }
+            await new Promise<void>((resolve, reject) => {
+              const img = new Image();
+              img.onload = () => resolve();
+              img.onerror = () => reject(new Error('ไม่สามารถโหลดภาพ AI ได้'));
+              img.src = data.result as string;
+            });
 
-        if (!data?.result) {
-          throw new Error(
-            'ระบบสร้างภาพไม่ได้ส่งภาพกลับมา'
-          );
-        }
-
-        setAppLogo(
-          data.result
-        );
-
-        await new Promise<void>(
-          (
-            resolve,
-            reject
-          ) => {
-            const img =
-              new Image();
-
-            img.onload =
-              () => resolve();
-
-            img.onerror =
-              () =>
-                reject(
-                  new Error(
-                    'ไม่สามารถโหลดภาพ AI ได้'
-                  )
-                );
-
-            img.src =
-              data.result as string;
+            images.push(data.result);
+            setGeneratedImages([...images]);
+          } catch (error: unknown) {
+            generationError = error;
+            console.error(`AI generation ${index + 1}/3 failed:`, error);
+            break;
           }
-        );
+        }
+
+        if (images.length === 0) {
+          throw generationError || new Error('ไม่สามารถสร้างภาพ AI ได้');
+        }
 
         await waitForFonts();
+        setShowImageChoices(true);
 
-        setShowPreview(
-          true
-        );
+        if (images.length < 3) {
+          const reason = generationError instanceof Error
+            ? generationError.message
+            : 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+          alert(`สร้างภาพได้ ${images.length} จาก 3 แบบ\n\n${reason}\n\nคุณยังเลือกภาพที่สร้างสำเร็จได้`);
+        }
       } catch (
         err: unknown
       ) {
@@ -693,9 +676,8 @@ export default function MiniAppForm() {
           `สร้างภาพ AI ไม่สำเร็จ\n\n${errorMessage}`
         );
       } finally {
-        setIsGenerating(
-          false
-        );
+        setIsGenerating(false);
+        setGenerationProgress(0);
       }
     };
 
@@ -984,6 +966,59 @@ export default function MiniAppForm() {
         );
       }
     };
+
+  if (showImageChoices) {
+    return (
+      <main className="min-h-screen bg-gray-100 px-4 py-8 sm:px-8">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">เลือกภาพพื้นหลัง</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                เลือก 1 แบบเพื่อนำไปใช้กับ Screenshot ทั้งชุด ({generatedImages.length}/3 แบบ)
+              </p>
+            </div>
+            <button
+              onClick={() => setShowImageChoices(false)}
+              className="rounded-md border border-blue-500 bg-white px-4 py-2 font-medium text-blue-500 transition hover:bg-blue-50"
+            >
+              ← กลับไปแก้ไขข้อมูล
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {generatedImages.map((image, index) => (
+              <article key={`generated-option-${index}`} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <div className="relative mx-auto aspect-[9/16] w-full max-w-[300px] bg-gray-200 sm:max-w-none">
+                  <div
+                    role="img"
+                    aria-label={`ภาพพื้นหลังตัวเลือกที่ ${index + 1}`}
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url("${image}")` }}
+                  />
+                  <span className="absolute left-3 top-3 rounded-full bg-black/65 px-3 py-1 text-sm font-semibold text-white">
+                    แบบที่ {index + 1}
+                  </span>
+                </div>
+                <div className="p-4">
+                  <button
+                    onClick={() => {
+                      setAppLogo(image);
+                      setShowImageChoices(false);
+                      setShowPreview(true);
+                    }}
+                    className="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-700"
+                  >
+                    เลือกแบบนี้
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (showPreview) {
     return (
@@ -2101,7 +2136,7 @@ export default function MiniAppForm() {
                   </div>
                   <div className="text-xs text-gray-400 mt-0.5">
                     ระบบจะสร้างภาพประกอบ AI
-                    และเปิดหน้า Preview ให้ทันที
+                    3 แบบให้เลือกก่อนเปิดหน้า Preview
                   </div>
                 </div>
               </div>
@@ -2126,7 +2161,7 @@ export default function MiniAppForm() {
                       ◌
                     </span>
                     <span>
-                      กำลังสร้างภาพ...
+                      กำลังสร้างภาพ {generationProgress}/3...
                     </span>
                   </>
                 ) : (
