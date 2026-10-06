@@ -6,6 +6,8 @@ import '@fontsource/anuphan/600.css';
 import '@fontsource/anuphan/700.css';
 import { toPng } from 'html-to-image';
 
+const imageVariationLabels = ['มุมกว้างเห็นบรรยากาศ', 'เน้นตัวแบบ', 'มุมภาพยนตร์'];
+
 export default function MiniAppForm() {
   const [showPreview, setShowPreview] = useState(false);
   const [showImageChoices, setShowImageChoices] = useState(false);
@@ -576,6 +578,7 @@ export default function MiniAppForm() {
 
         const images: string[] = [];
         let generationError: unknown = null;
+        const seedBase = Math.floor(Math.random() * 2_000_000_000);
 
         for (let index = 0; index < 3; index += 1) {
           setGenerationProgress(index + 1);
@@ -584,7 +587,11 @@ export default function MiniAppForm() {
             const response = await fetch('/api/generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ imagePrompt }),
+              body: JSON.stringify({
+                imagePrompt,
+                variation: index,
+                seed: seedBase + index,
+              }),
             });
 
             let data: { result?: string; error?: string };
@@ -980,7 +987,7 @@ export default function MiniAppForm() {
                     style={{ backgroundImage: `url("${image}")` }}
                   />
                   <span className="absolute left-3 top-3 rounded-full bg-black/65 px-3 py-1 text-sm font-semibold text-white">
-                    แบบที่ {index + 1}
+                    {imageVariationLabels[index] || `แบบที่ ${index + 1}`}
                   </span>
                 </div>
                 <div className="p-4">

@@ -9,8 +9,15 @@ export const maxDuration = 60;
  * ============================================================
  */
 const buildImagePrompt = (
-  userPrompt: string
+  userPrompt: string,
+  variation: number
 ) => {
+  const cameraVariations = [
+    'Use a wide establishing shot with the environment clearly visible and the main subject in the midground.',
+    'Use an eye-level medium shot with the main subject closer to camera and its activity easy to understand.',
+    'Use a cinematic three-quarter camera angle with layered foreground and background depth; place the main subject slightly off-center.',
+  ];
+
   return `
 Create ONE new clean premium vertical environmental photograph based on the user's image prompt below.
 
@@ -27,6 +34,8 @@ COMPOSITION:
 Vertical 9:16.
 Single main subject should occupy the middle and lower area.
 Keep the upper area visually clean and natural.
+${cameraVariations[variation]}
+Change only the camera framing from other options. Preserve the exact subject and setting requested by the user.
 
 STYLE:
 Photorealistic. Premium commercial photography. Cinematic natural lighting. Highly detailed. Perfect anatomical correctness.
@@ -39,7 +48,9 @@ Photorealistic. Premium commercial photography. Cinematic natural lighting. High
  * ============================================================
  */
 const generateWithDeApi = async (
-  userPrompt: string
+  userPrompt: string,
+  variation: number,
+  seed: number
 ) => {
   const deadline = Date.now() + 50_000;
   const apiKey = process.env.DEAPI_API_KEY;
@@ -47,14 +58,14 @@ const generateWithDeApi = async (
 
   if (!apiKey) throw new Error('DEAPI_API_KEY_MISSING');
 
-  const prompt = buildImagePrompt(userPrompt);
+  const prompt = buildImagePrompt(userPrompt, variation);
   const formData = new FormData();
   formData.append('model', model);
   formData.append('prompt', prompt);
   formData.append('width', '768');
   formData.append('height', '1344');
   formData.append('steps', '4');
-  formData.append('seed', '-1');
+  formData.append('seed', String(seed));
 
   // Reserve time for job polling and downloading the completed image.
   const controller = new AbortController();
@@ -206,6 +217,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const userPrompt = typeof body.imagePrompt === 'string' ? body.imagePrompt.trim() : '';
+    const variation = Number.isInteger(body.variation) && body.variation >= 0 && body.variation <= 2
+      ? body.variation
+      : 0;
+    const seed = Number.isInteger(body.seed) && body.seed >= 0 && body.seed <= 2147483647
+      ? body.seed
+      : -1;
 
     if (!userPrompt) {
       return NextResponse.json(
@@ -222,7 +239,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      const aiBackgroundImage = await generateWithDeApi(userPrompt);
+      const aiBackgroundImage = await generateWithDeApi(userPrompt, variation, seed);
 
       if (aiBackgroundImage) {
         const finalArtwork = buildFinalArtwork(aiBackgroundImage);
